@@ -9,6 +9,7 @@
 struct Bot
 {
     State state;
+    int currentDir;
 
     Bot();
 
