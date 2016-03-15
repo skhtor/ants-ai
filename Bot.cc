@@ -5,7 +5,6 @@ using namespace std;
 //constructor
 Bot::Bot()
 {
-  currentDir = 0;
 };
 
 //plays a single game of Ants.
@@ -32,18 +31,34 @@ void Bot::makeMoves()
     state.bug << state << endl;
 
     //picks out moves for each ant
-    for(int ant=0; ant<(int)state.myAnts.size(); ant++)
+    for (int ant=0; ant<(int)state.myAnts.size(); ant++)
     {
-        antMoved = false;
+        if (dirDict.find(ant) == dirDict.end()) {
+            dirDict[ant] = 0;
+        }
+
+        bool antMoved = false;
+
+        int currentDir = dirDict[ant];
+
+        bool looped = false;
 
         while (!antMoved) { // loop until the ant has moved in a direction
 
-            currentDir = currentDir % 4; // currentDir is either 0, 1, 2, or 3
             Location loc = state.getLocation(state.myAnts[ant], currentDir);
 
-            if(state.grid[loc.row][loc.col].isWater or state.grid[row][col].ant >= 0) // if water or ant, change dir
+            if (state.grid[loc.row][loc.col].isWater or state.grid[loc.row][loc.col].ant >= 0) // if water or ant, change dir
             {
+
                 currentDir += 1;
+                if (currentDir == 4) {
+                    if (!looped) {
+                        currentDir = 0;
+                        looped = true;
+                    }
+                    else antMoved = true;
+                }
+
             }
             else // otherwise location is free and ant will move
             {
@@ -51,6 +66,8 @@ void Bot::makeMoves()
                 antMoved = true;
             }
         }
+
+        dirDict[ant] = currentDir;
     }
 
     state.bug << "time taken: " << state.timer.getTime() << "ms" << endl << endl;
