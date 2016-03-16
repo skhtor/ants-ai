@@ -45,7 +45,7 @@ void Bot::makeMoves()
 
         while (!antMoved) { // loop until the ant has moved in a direction
 
-            Location loc = state.getLocation(state.myAnts[ant], currentDir);
+            Location loc = state.getLocation(state.myAnts[ant].m_loc, currentDir);
 
             if (state.grid[loc.row][loc.col].isWater or state.grid[loc.row][loc.col].ant >= 0) // if water or ant, change dir
             {
@@ -62,7 +62,7 @@ void Bot::makeMoves()
             }
             else // otherwise location is free and ant will move
             {
-                state.makeMove(state.myAnts[ant], currentDir);
+                state.makeMove(state.myAnts[ant].m_loc, currentDir);
                 antMoved = true;
             }
         }

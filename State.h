@@ -15,6 +15,7 @@
 #include "Bug.h"
 #include "Square.h"
 #include "Location.h"
+#include "Ant.h"
 
 /*
     constants
@@ -41,7 +42,8 @@ struct State
     int64_t seed;
 
     std::vector<std::vector<Square> > grid;
-    std::vector<Location> myAnts, enemyAnts, myHills, enemyHills, food;
+    std::vector<Location> myHills, enemyHills, food;
+    std::vector<Ant> myAnts, enemyAnts;
 
     Timer timer;
     Bug bug;

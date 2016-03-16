@@ -79,7 +79,7 @@ void State::updateVisionInformation()
 
     for(int a=0; a<(int) myAnts.size(); a++)
     {
-        sLoc = myAnts[a];
+        sLoc = myAnts[a].m_loc;
         locQueue.push(sLoc);
 
         std::vector<std::vector<bool> > visited(rows, std::vector<bool>(cols, 0));
@@ -221,10 +221,12 @@ istream& operator>>(istream &is, State &state)
             {
                 is >> row >> col >> player;
                 state.grid[row][col].ant = player;
+                Location loc = Location(row, col);
+
                 if(player == 0)
-                    state.myAnts.push_back(Location(row, col));
+                    state.myAnts.push_back(Ant(loc));
                 else
-                    state.enemyAnts.push_back(Location(row, col));
+                    state.enemyAnts.push_back(Ant(loc));
             }
             else if(inputType == "d") //dead ant square
             {

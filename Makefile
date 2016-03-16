@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=-O3 -funroll-loops -c
 LDFLAGS=-O2 -lm
-SOURCES=Bot.cc MyBot.cc State.cc
+SOURCES=Bot.cc MyBot.cc State.cc Ant.cc
 OBJECTS=$(addsuffix .o, $(basename ${SOURCES}))
 EXECUTABLE=MyBot
 
@@ -16,9 +16,8 @@ $(EXECUTABLE): $(OBJECTS)
 .cc.o: *.h
 	$(CC) $(CFLAGS) $< -o $@
 
-clean: 
+clean:
 	-rm -f ${EXECUTABLE} ${OBJECTS} *.d
 	-rm -f debug.txt
 
 .PHONY: all clean
-
