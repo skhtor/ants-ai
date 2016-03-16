@@ -13,8 +13,6 @@ struct Bot
 
     Bot();
 
-    std::map<int, int> dirDict;
-
     void playGame();    //plays a single game of Ants
 
     void makeMoves();   //makes moves for a single turn

@@ -3,8 +3,11 @@
 
 #include "Location.h"
 
-struct Ant {
+struct Ant
+{
     Location m_loc;
+
+    int m_currentDir;
 
     Ant(Location loc);
 };

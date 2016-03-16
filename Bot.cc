@@ -33,41 +33,35 @@ void Bot::makeMoves()
     //picks out moves for each ant
     for (int ant=0; ant<(int)state.myAnts.size(); ant++)
     {
-        if (dirDict.find(ant) == dirDict.end()) {
-            dirDict[ant] = 0;
-        }
-
         bool antMoved = false;
-
-        int currentDir = dirDict[ant];
-
         bool looped = false;
+        int dir = state.myAnts[ant].m_currentDir;
 
-        while (!antMoved) { // loop until the ant has moved in a direction
+        while (!antMoved)
+        { // loop until the ant has moved in a direction
+            Location loc = state.getLocation(state.myAnts[ant].m_loc, dir);
 
-            Location loc = state.getLocation(state.myAnts[ant].m_loc, currentDir);
-
-            if (state.grid[loc.row][loc.col].isWater or state.grid[loc.row][loc.col].ant >= 0) // if water or ant, change dir
-            {
-
-                currentDir += 1;
-                if (currentDir == 4) {
-                    if (!looped) {
-                        currentDir = 0;
+            if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
+            { // if water or ant, change dir
+                dir++;
+                if (dir >= 4)
+                {
+                    if (!looped)
+                    {
+                        dir = 0;
                         looped = true;
                     }
                     else antMoved = true;
                 }
-
             }
             else // otherwise location is free and ant will move
             {
-                state.makeMove(state.myAnts[ant].m_loc, currentDir);
+                state.makeMove(state.myAnts[ant].m_loc, dir);
                 antMoved = true;
             }
         }
 
-        dirDict[ant] = currentDir;
+        state.myAnts[ant].m_currentDir = dir;
     }
 
     state.bug << "time taken: " << state.timer.getTime() << "ms" << endl << endl;
