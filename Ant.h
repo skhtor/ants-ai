@@ -5,11 +5,15 @@
 
 struct Ant
 {
+    // Attributes
     Location m_loc;
+    int m_dir;
 
-    int m_currentDir;
-
+    // Constructor
     Ant(Location loc);
+
+    // Setter
+    void MoveTo(Location loc);
 };
 
 #endif //ANT_H_

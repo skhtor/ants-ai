@@ -13,6 +13,8 @@ struct Bot
 
     Bot();
 
+    std::vector<Ant> myAnts;
+
     void playGame();    //plays a single game of Ants
 
     void makeMoves();   //makes moves for a single turn

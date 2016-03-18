@@ -25,8 +25,8 @@ void State::setup()
 //resets all non-water squares to land and clears the bots ant vector
 void State::reset()
 {
-    myAnts.clear();
-    enemyAnts.clear();
+    myAntLocs.clear();
+    enemyAntLocs.clear();
     myHills.clear();
     enemyHills.clear();
     food.clear();
@@ -77,9 +77,9 @@ void State::updateVisionInformation()
     std::queue<Location> locQueue;
     Location sLoc, cLoc, nLoc;
 
-    for(int a=0; a<(int) myAnts.size(); a++)
+    for(int a=0; a<(int) myAntLocs.size(); a++)
     {
-        sLoc = myAnts[a].m_loc;
+        sLoc = myAntLocs[a];
         locQueue.push(sLoc);
 
         std::vector<std::vector<bool> > visited(rows, std::vector<bool>(cols, 0));
@@ -221,12 +221,11 @@ istream& operator>>(istream &is, State &state)
             {
                 is >> row >> col >> player;
                 state.grid[row][col].ant = player;
-                Location loc = Location(row, col);
 
                 if(player == 0)
-                    state.myAnts.push_back(Ant(loc));
+                    state.myAntLocs.push_back(Location(row, col));
                 else
-                    state.enemyAnts.push_back(Ant(loc));
+                    state.enemyAntLocs.push_back(Location(row, col));
             }
             else if(inputType == "d") //dead ant square
             {
