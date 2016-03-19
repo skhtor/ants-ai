@@ -9,16 +9,20 @@
 */
 struct Bot
 {
+    // Attributes
     State state;
-
-    Bot();
-
     std::vector<Ant> myAnts;
 
-    void playGame();    //plays a single game of Ants
+    // Constructor
+    Bot();
 
+    // Methods
+    void playGame();    //plays a single game of Ants
     void makeMoves();   //makes moves for a single turn
     void endTurn();     //indicates to the engine that it has made its moves
+
+    void SpawnNewAnts();
+    void DeleteDeadAnts(int currentAnt);
 };
 
 #endif //BOT_H_

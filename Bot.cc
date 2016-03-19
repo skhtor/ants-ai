@@ -30,41 +30,12 @@ void Bot::makeMoves()
     state.bug << "turn " << state.turn << ":" << endl;
     state.bug << state << endl;
 
-    // If server returns a location of an ant we don't know about, create an Ant object at that location
-    for (int loc = 0; loc < state.myAntLocs.size(); loc++)
-    { // for each ant location
-        bool spawnAnt = true;
-        for (int ant = 0; ant < myAnts.size(); ant++)
-        { // check that location against all of our stored Ants
-            if (myAnts[ant].m_loc.row == state.myAntLocs[loc].row && myAnts[ant].m_loc.col == state.myAntLocs[loc].col)
-            { // if we have an ant at that location, don't spawn it
-                 spawnAnt = false;
-            }
-        }
-
-        // spawn the Ant
-        if (spawnAnt)
-        {
-            myAnts.push_back(Ant(state.myAntLocs[loc]));
-        }
-    }
+    SpawnNewAnts();
 
     for (int ant = 0; ant < myAnts.size(); ant++)
     { // For each ant
 
-        bool antDead = true;
-        // Delete any ant that doesn't exist anymore (ie server responds with ant not existing in that location anymore)
-        for (int i=0; i<state.myAntLocs.size(); i++)
-        {
-            if (myAnts[ant].m_loc.row == state.myAntLocs[i].row && myAnts[ant].m_loc.col == state.myAntLocs[i].col)
-            {
-                 antDead = false;
-            }
-        }
-        if (antDead)
-        {
-            myAnts.erase(myAnts.begin() + ant); // Ant location doesn't exist, therefore ant must have died
-        }
+        DeleteDeadAnts(ant);
 
         bool antMoved = false;
         bool looped = false;
@@ -108,7 +79,7 @@ void Bot::makeMoves()
     state.bug << "time taken: " << state.timer.getTime() << "ms" << endl << endl;
 };
 
-//finishes the turn
+// Finishes the turn
 void Bot::endTurn()
 {
     if(state.turn > 0)
@@ -117,3 +88,44 @@ void Bot::endTurn()
 
     cout << "go" << endl;
 };
+
+// --------------------------------------------------------------------Methods//
+
+void Bot::SpawnNewAnts()
+{
+    // If server returns a location of an ant we don't know about, create an Ant object at that location
+    for (int loc = 0; loc < state.myAntLocs.size(); loc++)
+    { // for each ant location
+        bool spawnAnt = true;
+        for (int ant = 0; ant < myAnts.size(); ant++)
+        { // check that location against all of our stored Ants
+            if (myAnts[ant].m_loc.row == state.myAntLocs[loc].row && myAnts[ant].m_loc.col == state.myAntLocs[loc].col)
+            { // if we have an ant at that location, don't spawn it
+                 spawnAnt = false;
+            }
+        }
+
+        // spawn the Ant
+        if (spawnAnt)
+        {
+            myAnts.push_back(Ant(state.myAntLocs[loc]));
+        }
+    }
+}
+
+void Bot::DeleteDeadAnts(int currentAnt)
+{
+    bool antDead = true;
+    // Delete any ant that doesn't exist anymore (ie server responds with ant not existing in that location anymore)
+    for (int i=0; i<state.myAntLocs.size(); i++)
+    {
+        if (myAnts[currentAnt].m_loc.row == state.myAntLocs[i].row && myAnts[currentAnt].m_loc.col == state.myAntLocs[i].col)
+        {
+             antDead = false;
+        }
+    }
+    if (antDead)
+    {
+        myAnts.erase(myAnts.begin() + currentAnt); // Ant location doesn't exist, therefore ant must have died
+    }
+}
