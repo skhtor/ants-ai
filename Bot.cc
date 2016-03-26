@@ -41,6 +41,30 @@ void Bot::makeMoves()
         bool looped = false;
         int dir = myAnts[ant].m_dir;
 
+        // Clear all data
+        while (myAnts[ant].m_queue.size() > 0)
+        {
+            myAnts[ant].m_queue.pop();
+        }
+        myAnts[ant].m_path.clear();
+        myAnts[ant].m_visited.clear();
+
+        SearchRadius(ant);
+
+        if (myAnts[ant].m_path.size() < 0)
+        {
+            for (int dir = 0; dir < 4; dir++)
+            {
+                Location loc = state.getLocation(myAnts[ant].m_loc, dir);
+
+                if (loc.row == myAnts[ant].m_path[0].m_loc.row && loc.col == myAnts[ant].m_path[0].m_loc.col)
+                {
+                    state.makeMove(, dir);
+                    myAnts[ant].MoveTo(loc);
+                }
+            }
+        }
+
         while (!antMoved)
         { // loop until the ant has moved in a direction
             if (dir >= 4)
@@ -61,12 +85,11 @@ void Bot::makeMoves()
             }
             else // otherwise location is free and ant will move
             {
-                for (int i=0; i<state.myAntLocs.size(); i++)
+                for (Location l: state.myAntLocs)
                 {
-                    if (myAnts[ant].m_loc.row == state.myAntLocs[i].row
-                        && myAnts[ant].m_loc.col == state.myAntLocs[i].col)
-                    { // Ant location doesn't exist, therefore ant must have died
-                        state.makeMove(state.myAntLocs[i], dir);
+                    if (myAnts[ant].m_loc.row == l.row && myAnts[ant].m_loc.col == l.col)
+                    {
+                        state.makeMove(loc, dir);
                         myAnts[ant].MoveTo(loc);
                     }
                 }
@@ -94,12 +117,12 @@ void Bot::endTurn()
 void Bot::SpawnNewAnts()
 {
     // If server returns a location of an ant we don't know about, create an Ant object at that location
-    for (int loc = 0; loc < state.myAntLocs.size(); loc++)
+    for (Location l: state.myAntLocs)
     { // for each ant location
         bool spawnAnt = true;
         for (int ant = 0; ant < myAnts.size(); ant++)
         { // check that location against all of our stored Ants
-            if (myAnts[ant].m_loc.row == state.myAntLocs[loc].row && myAnts[ant].m_loc.col == state.myAntLocs[loc].col)
+            if (myAnts[ant].m_loc.row == l.row && myAnts[ant].m_loc.col == l.col)
             { // if we have an ant at that location, don't spawn it
                  spawnAnt = false;
             }
@@ -108,7 +131,7 @@ void Bot::SpawnNewAnts()
         // spawn the Ant
         if (spawnAnt)
         {
-            myAnts.push_back(Ant(state.myAntLocs[loc]));
+            myAnts.push_back(Ant(l));
         }
     }
 }
@@ -117,9 +140,9 @@ void Bot::DeleteDeadAnts(int currentAnt)
 {
     bool antDead = true;
     // Delete any ant that doesn't exist anymore (ie server responds with ant not existing in that location anymore)
-    for (int i=0; i<state.myAntLocs.size(); i++)
+    for (Location l: state.myAntLocs)
     {
-        if (myAnts[currentAnt].m_loc.row == state.myAntLocs[i].row && myAnts[currentAnt].m_loc.col == state.myAntLocs[i].col)
+        if (myAnts[currentAnt].m_loc.row == l.row && myAnts[currentAnt].m_loc.col == l.col)
         {
              antDead = false;
         }
@@ -127,5 +150,85 @@ void Bot::DeleteDeadAnts(int currentAnt)
     if (antDead)
     {
         myAnts.erase(myAnts.begin() + currentAnt); // Ant location doesn't exist, therefore ant must have died
+    }
+}
+
+std::vector<Location> Bot::GetNeighbours(Location loc)
+{
+    std::vector<Location> neighbours;
+
+    for (int dir = 0; dir < 4; dir++)
+    {
+        Location newLoc = state.getLocation(loc, dir);
+
+        if (!state.grid[newLoc.row][newLoc.col].isWater && state.grid[newLoc.row][newLoc.col].ant < 0)
+        {
+            neighbours.push_back(newLoc);
+        }
+    }
+
+    return neighbours;
+};
+
+void Bot::SearchRadius(int ant)
+{
+    Node node = Node(myAnts[ant].m_loc);
+    myAnts[ant].m_queue.push(node);
+
+    while (myAnts[ant].m_queue.size() > 0)
+    {
+        // Dequeue node
+        Node currentNode = myAnts[ant].m_queue.front();
+        myAnts[ant].m_queue.pop();
+
+        // Add to visited nodes
+        myAnts[ant].m_visited.push_back(currentNode);
+
+        // If target cell, break
+        if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isFood)
+        {
+            while (currentNode.m_predecessor != -1)
+            {
+                myAnts[ant].m_path.push_back(currentNode);
+
+                for (Node n: myAnts[ant].m_nodes)
+                {
+                    if (n.m_id == currentNode.m_predecessor)
+                    {
+                        currentNode = n;
+                        break;
+                    }
+                }
+            }
+            // Reverse the order so path is in order;
+            std::reverse(myAnts[ant].m_path.begin(),myAnts[ant].m_path.end());
+            break;
+        }
+
+        // Check available surrounding nodes from current node
+        std::vector<Location> neighbours = GetNeighbours(currentNode.m_loc);
+
+        bool visited = false;
+        int unvisited = 0;
+        for (Location l: neighbours)
+        {
+            // Check if not visited
+            for (int i = 0; i < myAnts[ant].m_visited.size(); i++)
+            { // for each stored node
+                if (myAnts[ant].m_visited[i].m_loc.row == l.row && myAnts[ant].m_visited[i].m_loc.col == l.col)
+                { // if newLoc is already a found location
+                     visited = true;
+                }
+            }
+
+            if (!visited)
+            {
+                if (state.grid[l.row][l.col].isVisible == 1)
+                {
+                    myAnts[ant].m_queue.push(Node(l, currentNode.m_id));
+                    unvisited++;
+                }
+            }
+        }
     }
 }

@@ -2,7 +2,6 @@
 #define BOT_H_
 
 #include "State.h"
-#include <map>
 
 /*
     This struct represents your bot in the game of Ants
@@ -23,6 +22,8 @@ struct Bot
 
     void SpawnNewAnts();
     void DeleteDeadAnts(int currentAnt);
+    std::vector<Location> GetNeighbours(Location loc);
+    void SearchRadius(int ant);
 };
 
 #endif //BOT_H_
