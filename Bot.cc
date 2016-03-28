@@ -37,10 +37,6 @@ void Bot::makeMoves()
 
         DeleteDeadAnts(ant);
 
-        bool antMoved = false;
-        bool looped = false;
-        int dir = myAnts[ant].m_dir;
-
         // Clear all data
         while (myAnts[ant].m_queue.size() > 0)
         {
@@ -51,7 +47,7 @@ void Bot::makeMoves()
 
         SearchRadius(ant);
 
-        if (myAnts[ant].m_path.size() < 0)
+        if (myAnts[ant].m_path.size() > 0)
         {
             for (int dir = 0; dir < 4; dir++)
             {
@@ -59,44 +55,45 @@ void Bot::makeMoves()
 
                 if (loc.row == myAnts[ant].m_path[0].m_loc.row && loc.col == myAnts[ant].m_path[0].m_loc.col)
                 {
-                    state.makeMove(, dir);
+                    state.makeMove(myAnts[ant].m_loc, dir);
                     myAnts[ant].MoveTo(loc);
                 }
             }
         }
+        else
+        {
+            bool antMoved = false;
+            bool looped = false;
+            int dir = myAnts[ant].m_dir;
 
-        while (!antMoved)
-        { // loop until the ant has moved in a direction
-            if (dir >= 4)
-            {
-                if (!looped)
+            while (!antMoved)
+            { // loop until the ant has moved in a direction
+                if (dir >= 4)
                 {
-                    dir = 0;
-                    looped = true;
-                }
-                else antMoved = true;
-            }
-
-            Location loc = state.getLocation(myAnts[ant].m_loc, dir);
-
-            if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
-            { // if water or ant, change dir
-                dir++;
-            }
-            else // otherwise location is free and ant will move
-            {
-                for (Location l: state.myAntLocs)
-                {
-                    if (myAnts[ant].m_loc.row == l.row && myAnts[ant].m_loc.col == l.col)
+                    if (!looped)
                     {
-                        state.makeMove(loc, dir);
-                        myAnts[ant].MoveTo(loc);
+                        dir = 0;
+                        looped = true;
                     }
+                    else antMoved = true;
                 }
-                antMoved = true;
+
+                Location loc = state.getLocation(myAnts[ant].m_loc, dir);
+
+                if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
+                { // if water or ant, change dir
+                    dir++;
+                }
+                else // otherwise location is free and ant will move
+                {
+                    state.makeMove(myAnts[ant].m_loc, dir);
+                    myAnts[ant].MoveTo(loc);
+                    antMoved = true;
+                }
             }
+
+            myAnts[ant].m_dir = dir;
         }
-        myAnts[ant].m_dir = dir;
     }
 
     state.bug << "time taken: " << state.timer.getTime() << "ms" << endl << endl;
@@ -191,11 +188,11 @@ void Bot::SearchRadius(int ant)
             {
                 myAnts[ant].m_path.push_back(currentNode);
 
-                for (Node n: myAnts[ant].m_nodes)
+                for (Node n: myAnts[ant].m_visited)
                 {
                     if (n.m_id == currentNode.m_predecessor)
                     {
-                        currentNode = n;
+                        currentNode = Node(n.m_loc, n.m_predecessor);
                         break;
                     }
                 }
