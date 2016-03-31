@@ -26,7 +26,6 @@ struct Node
         m_loc = loc;
         m_predecessor = predecessor;
     };
-
 };
 
 #endif //NODE_H_

@@ -57,6 +57,7 @@ void Bot::makeMoves()
                 {
                     state.makeMove(myAnts[ant].m_loc, dir);
                     myAnts[ant].MoveTo(loc);
+                    break;
                 }
             }
         }
@@ -76,6 +77,7 @@ void Bot::makeMoves()
                         looped = true;
                     }
                     else antMoved = true;
+                    break;
                 }
 
                 Location loc = state.getLocation(myAnts[ant].m_loc, dir);
@@ -199,31 +201,31 @@ void Bot::SearchRadius(int ant)
             }
             // Reverse the order so path is in order;
             std::reverse(myAnts[ant].m_path.begin(),myAnts[ant].m_path.end());
-            break;
         }
-
-        // Check available surrounding nodes from current node
-        std::vector<Location> neighbours = GetNeighbours(currentNode.m_loc);
-
-        bool visited = false;
-        int unvisited = 0;
-        for (Location l: neighbours)
+        else
         {
-            // Check if not visited
-            for (int i = 0; i < myAnts[ant].m_visited.size(); i++)
-            { // for each stored node
-                if (myAnts[ant].m_visited[i].m_loc.row == l.row && myAnts[ant].m_visited[i].m_loc.col == l.col)
-                { // if newLoc is already a found location
-                     visited = true;
-                }
-            }
+            // Check available surrounding nodes from current node
+            std::vector<Location> neighbours = GetNeighbours(currentNode.m_loc);
 
-            if (!visited)
+            bool visited = false;
+            for (Location l: neighbours)
             {
-                if (state.grid[l.row][l.col].isVisible == 1)
+                // Check if not visited
+                for (Node n: myAnts[ant].m_visited)
+                { // for each stored node
+                    if (n.m_loc.row == l.row && n.m_loc.col == l.col)
+                    { // if newLoc is already a found location
+                        visited = true;
+                        break;
+                    }
+                }
+
+                if (!visited)
                 {
-                    myAnts[ant].m_queue.push(Node(l, currentNode.m_id));
-                    unvisited++;
+                    if (state.grid[l.row][l.col].isVisible == 1)
+                    {
+                        myAnts[ant].m_queue.push(Node(l, currentNode.m_id));
+                    }
                 }
             }
         }
