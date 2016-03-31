@@ -23,6 +23,8 @@ struct Bot
 
     void SpawnNewAnts();
     void DeleteDeadAnts(int currentAnt);
+
+    void SearchRadius(int ant);
 };
 
 #endif //BOT_H_

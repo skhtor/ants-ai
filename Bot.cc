@@ -129,3 +129,66 @@ void Bot::DeleteDeadAnts(int currentAnt)
         myAnts.erase(myAnts.begin() + currentAnt); // Ant location doesn't exist, therefore ant must have died
     }
 }
+
+void Bot::SearchRadius(int ant)
+{
+    Node node = Node(myAnts[ant].m_loc);
+    myAnts[ant].m_queue.push(node);
+
+    while (myAnts[ant].m_queue.size() > 0)
+    {
+        // Dequeue node
+        Node currentNode = myAnts[ant].m_queue.front();
+        myAnts[ant].m_queue.pop();
+
+        // Add to visited nodes
+        myAnts[ant].m_visited.push_back(currentNode);
+
+        // If target cell, break
+        if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isFood)
+        {
+            while (currentNode.m_predecessor != -1)
+            {
+                myAnts[ant].m_path.push_back(currentNode);
+
+                for (Node n: myAnts[ant].m_visited)
+                {
+                    if (n.m_id == currentNode.m_predecessor)
+                    {
+                        currentNode = Node(n.m_loc, n.m_predecessor);
+                        break;
+                    }
+                }
+            }
+            // Reverse the order so path is in order;
+            std::reverse(myAnts[ant].m_path.begin(),myAnts[ant].m_path.end());
+        }
+        else
+        {
+            // Check available surrounding nodes from current node
+            std::vector<Location> neighbours = GetNeighbours(currentNode.m_loc);
+
+            bool visited = false;
+            for (Location l: neighbours)
+            {
+                // Check if not visited
+                for (Node n: myAnts[ant].m_visited)
+                { // for each stored node
+                    if (n.m_loc.row == l.row && n.m_loc.col == l.col)
+                    { // if newLoc is already a found location
+                        visited = true;
+                        break;
+                    }
+                }
+
+                if (!visited)
+                {
+                    if (state.grid[l.row][l.col].isVisible == 1)
+                    {
+                        myAnts[ant].m_queue.push(Node(l, currentNode.m_id));
+                    }
+                }
+            }
+        }
+    }
+}
