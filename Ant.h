@@ -2,6 +2,7 @@
 #define ANT_H_
 
 #include "Location.h"
+#include "Node.h"
 #include <vector>
 #include <queue>
 
