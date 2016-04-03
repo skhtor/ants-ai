@@ -1,4 +1,5 @@
 #include "Bot.h"
+#include "time.h"
 
 using namespace std;
 
@@ -32,6 +33,20 @@ void Bot::makeMoves()
 
     SpawnNewAnts();
 
+    int right;
+
+    switch(rand() % 2)
+    {
+    case 0:
+        right = 1;
+        break;
+    case 1:
+        right = -1;
+        break;
+    default:
+        break;
+    };
+
     for (int ant = 0; ant < myAnts.size(); ant++)
     { // For each ant
 
@@ -40,6 +55,7 @@ void Bot::makeMoves()
         bool antMoved = false;
         bool looped = false;
         int dir = myAnts[ant].m_dir;
+
 
         while (!antMoved)
         { // loop until the ant has moved in a direction
@@ -52,12 +68,21 @@ void Bot::makeMoves()
                 }
                 else antMoved = true;
             }
+            if (dir <= -1)
+            {
+                if (!looped)
+                {
+                    dir = 3;
+                    looped = true;
+                }
+                else antMoved = true;
+            }
 
             Location loc = state.getLocation(myAnts[ant].m_loc, dir);
 
             if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
             { // if water or ant, change dir
-                dir++;
+                dir = dir + right;
             }
             else // otherwise location is free and ant will move
             {
