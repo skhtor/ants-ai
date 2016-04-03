@@ -86,15 +86,8 @@ void Bot::makeMoves()
             }
             else // otherwise location is free and ant will move
             {
-                for (int i=0; i<state.myAntLocs.size(); i++)
-                {
-                    if (myAnts[ant].m_loc.row == state.myAntLocs[i].row
-                        && myAnts[ant].m_loc.col == state.myAntLocs[i].col)
-                    { // Ant location doesn't exist, therefore ant must have died
-                        state.makeMove(state.myAntLocs[i], dir);
-                        myAnts[ant].MoveTo(loc);
-                    }
-                }
+                state.makeMove(myAnts[ant].m_loc, dir);
+                myAnts[ant].MoveTo(loc);
                 antMoved = true;
             }
         }
