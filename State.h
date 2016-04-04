@@ -42,6 +42,7 @@ struct State
     int64_t seed;
 
     std::vector<std::vector<Square> > grid;
+    std::vector<std::vector<int> > gridValues;
     std::vector<Location> myAntLocs, enemyAntLocs, myHills, enemyHills, food;
 
     Timer timer;
@@ -62,6 +63,7 @@ struct State
     Location getLocation(const Location &startLoc, int direction);
 
     void updateVisionInformation();
+    void updateGridValues();
 };
 
 std::ostream& operator<<(std::ostream &os, const State &state);

@@ -20,6 +20,7 @@ void Bot::playGame()
     while(cin >> state)
     {
         state.updateVisionInformation();
+        state.updateGridValues();
         makeMoves();
         endTurn();
     }
