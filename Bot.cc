@@ -37,43 +37,93 @@ void Bot::makeMoves()
 
         DeleteDeadAnts(ant);
 
-        bool antMoved = false;
-        bool looped = false;
-        int dir = myAnts[ant].m_dir;
+        for (Node* n: myAnts[ant].m_visited)
+        {
+            delete n;
+            n = NULL;
+        }
+        myAnts[ant].m_visited.clear();
+        state.bug << "Deleted m_visited, ";
 
-        while (!antMoved)
-        { // loop until the ant has moved in a direction
-            if (dir >= 4)
+        for (Node* n: myAnts[ant].m_path)
+        {
+            delete n;
+            n = NULL;
+        }
+        myAnts[ant].m_path.clear();
+        state.bug << "Deleted m_path, ";
+
+        for (Node* n: myAnts[ant].m_queue)
+        {
+            delete n;
+            n = NULL;
+        }
+        myAnts[ant].m_queue.clear();
+        state.bug << "Deleted m_queue." << endl;
+
+        SearchRadius(ant);
+
+        if (myAnts[ant].m_path.size() > 0)
+        {
+            Location targetLoc = myAnts[ant].m_path[0]->m_loc;
+
+            for (int dir = 0; dir < 4; dir++)
             {
-                if (!looped)
-                {
-                    dir = 0;
-                    looped = true;
-                }
-                else antMoved = true;
-            }
+                Location loc = state.getLocation(myAnts[ant].m_loc, dir);
 
-            Location loc = state.getLocation(myAnts[ant].m_loc, dir);
-
-            if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
-            { // if water or ant, change dir
-                dir++;
-            }
-            else // otherwise location is free and ant will move
-            {
-                for (int i=0; i<state.myAntLocs.size(); i++)
+                if (targetLoc.col == loc.col && targetLoc.row == loc.row)
                 {
-                    if (myAnts[ant].m_loc.row == state.myAntLocs[i].row
-                        && myAnts[ant].m_loc.col == state.myAntLocs[i].col)
-                    { // Ant location doesn't exist, therefore ant must have died
-                        state.makeMove(state.myAntLocs[i], dir);
-                        myAnts[ant].MoveTo(loc);
-                    }
+                    state.makeMove(myAnts[ant].m_loc, dir);
+                    myAnts[ant].MoveTo(targetLoc);
+                    myAnts[ant].m_dir = dir;
+                    break;
                 }
-                antMoved = true;
             }
         }
-        myAnts[ant].m_dir = dir;
+        else
+        {
+            bool antMoved = false;
+            bool looped = false;
+            int dir = myAnts[ant].m_dir;
+
+            while (!antMoved)
+            { // loop until the ant has moved in a direction
+                if (dir >= 4)
+                {
+                    if (!looped)
+                    {
+                        dir = 0;
+                        looped = true;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                Location loc = state.getLocation(myAnts[ant].m_loc, dir);
+
+                if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
+                { // if water or ant, change dir
+                    dir++;
+                }
+                else // otherwise location is free and ant will move
+                {
+                    for (int i=0; i<state.myAntLocs.size(); i++)
+                    {
+                        if (myAnts[ant].m_loc.row == state.myAntLocs[i].row
+                            && myAnts[ant].m_loc.col == state.myAntLocs[i].col)
+                        { // Ant location doesn't exist, therefore ant must have died
+                            state.makeMove(state.myAntLocs[i], dir);
+                            myAnts[ant].MoveTo(loc);
+                            break;
+                        }
+                    }
+                    antMoved = true;
+                }
+            }
+            myAnts[ant].m_dir = dir;
+        }
     }
 
     state.bug << "time taken: " << state.timer.getTime() << "ms" << endl << endl;
@@ -130,51 +180,85 @@ void Bot::DeleteDeadAnts(int currentAnt)
     }
 }
 
+std::vector<Location> Bot::GetNeighbours(Location loc)
+{
+    std::vector<Location> neighbours;
+
+    for (int dir = 0; dir < 4; dir++)
+    {
+        Location newLoc = state.getLocation(loc, dir);
+
+        if (!state.grid[newLoc.row][newLoc.col].isWater && state.grid[newLoc.row][newLoc.col].ant < 0)
+        {
+            neighbours.push_back(newLoc);
+        }
+    }
+
+    return neighbours;
+};
+
 void Bot::SearchRadius(int ant)
 {
-    Node node = Node(myAnts[ant].m_loc);
-    myAnts[ant].m_queue.push(node);
+    state.bug << "Ant " << ant << ": ";
+    myAnts[ant].m_queue.push_back(new Node(myAnts[ant].m_loc));
 
     while (myAnts[ant].m_queue.size() > 0)
     {
-        // Dequeue node
-        Node currentNode = myAnts[ant].m_queue.front();
-        myAnts[ant].m_queue.pop();
+        //Dequeue
+        Node* currentNode = myAnts[ant].m_queue.front();
+        myAnts[ant].m_queue.pop_front();
 
         // Add to visited nodes
         myAnts[ant].m_visited.push_back(currentNode);
 
         // If target cell, break
-        if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isFood)
+        if (state.grid[currentNode->m_loc.row][currentNode->m_loc.col].isFood)
         {
-            while (currentNode.m_predecessor != -1)
+            for (Node* n: myAnts[ant].m_visited)
+            {
+                if (n->m_id == currentNode->m_predecessor)
+                {
+                    currentNode = n;
+                    break;
+                }
+            }
+
+            while (currentNode->m_predecessor != -1)
             {
                 myAnts[ant].m_path.push_back(currentNode);
 
-                for (Node n: myAnts[ant].m_visited)
+                for (Node* n: myAnts[ant].m_visited)
                 {
-                    if (n.m_id == currentNode.m_predecessor)
+                    if (n->m_id == currentNode->m_predecessor)
                     {
-                        currentNode = Node(n.m_loc, n.m_predecessor);
+                        currentNode = n;
                         break;
                     }
                 }
             }
             // Reverse the order so path is in order;
             std::reverse(myAnts[ant].m_path.begin(),myAnts[ant].m_path.end());
+
+            state.bug << "Loc: (" << myAnts[ant].m_loc.col << ", " << myAnts[ant].m_loc.row << ")" << "; Path: ";
+            for (Node* n: myAnts[ant].m_path)
+            {
+                state.bug << "(" << n->m_loc.col << ", " << n->m_loc.row << "), ";
+            }
+            state.bug << endl;
+            break;
         }
         else
         {
             // Check available surrounding nodes from current node
-            std::vector<Location> neighbours = GetNeighbours(currentNode.m_loc);
+            std::vector<Location> neighbours = GetNeighbours(currentNode->m_loc);
 
             bool visited = false;
             for (Location l: neighbours)
             {
                 // Check if not visited
-                for (Node n: myAnts[ant].m_visited)
+                for (Node* n: myAnts[ant].m_visited)
                 { // for each stored node
-                    if (n.m_loc.row == l.row && n.m_loc.col == l.col)
+                    if (n->m_loc.row == l.row && n->m_loc.col == l.col)
                     { // if newLoc is already a found location
                         visited = true;
                         break;
@@ -185,10 +269,13 @@ void Bot::SearchRadius(int ant)
                 {
                     if (state.grid[l.row][l.col].isVisible == 1)
                     {
-                        myAnts[ant].m_queue.push(Node(l, currentNode.m_id));
+                        myAnts[ant].m_queue.push_back(new Node(l, currentNode->m_id));
                     }
                 }
             }
         }
     }
+
+    if (myAnts[ant].m_queue.size() == 0)
+        state.bug << "No food found" << endl;
 }

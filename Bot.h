@@ -25,6 +25,7 @@ struct Bot
     void DeleteDeadAnts(int currentAnt);
 
     void SearchRadius(int ant);
+    std::vector<Location> GetNeighbours(Location loc);
 };
 
 #endif //BOT_H_
