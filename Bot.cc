@@ -21,6 +21,9 @@ void Bot::playGame()
     {
         state.updateVisionInformation();
         state.updateGridValues();
+
+        SpawnNewAnts();
+        DeleteDeadAnts();
         makeMoves();
         endTurn();
     }
@@ -32,67 +35,33 @@ void Bot::makeMoves()
     state.bug << "turn " << state.turn << ":" << endl;
     state.bug << state << endl;
 
-    SpawnNewAnts();
-
-    int right;
-
-    switch(rand() % 2)
-    {
-    case 0:
-        right = 1;
-        break;
-    case 1:
-        right = -1;
-        break;
-    default:
-        break;
-    };
-
     for (int ant = 0; ant < myAnts.size(); ant++)
     { // For each ant
 
-        DeleteDeadAnts(ant);
+        int highestVal = 0; // highest value of neighbours
+        int highestNeighbour = 0; // Index of neighbour with highest value
 
-        bool antMoved = false;
-        bool looped = false;
-        int dir = myAnts[ant].m_dir;
+        for (int dir = 0; dir < 4; dir++)
+        {
+            Location tempLoc = state.getLocation(myAnts[ant].m_loc, dir);
 
-
-        while (!antMoved)
-        { // loop until the ant has moved in a direction
-            if (dir >= 4)
+            if (state.gridValues[tempLoc.row][tempLoc.col] > highestVal)
             {
-                if (!looped)
-                {
-                    dir = 0;
-                    looped = true;
-                }
-                else antMoved = true;
-            }
-            if (dir <= -1)
-            {
-                if (!looped)
-                {
-                    dir = 3;
-                    looped = true;
-                }
-                else antMoved = true;
-            }
-
-            Location loc = state.getLocation(myAnts[ant].m_loc, dir);
-
-            if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
-            { // if water or ant, change dir
-                dir = dir + right;
-            }
-            else // otherwise location is free and ant will move
-            {
-                state.makeMove(myAnts[ant].m_loc, dir);
-                myAnts[ant].MoveTo(loc);
-                antMoved = true;
+                highestVal = state.gridValues[tempLoc.row][tempLoc.col];
+                highestNeighbour = dir;
             }
         }
-        myAnts[ant].m_dir = dir;
+
+        // If ant isn't blocked by water or other ants
+        if (highestVal > 0)
+        {
+            state.makeMove(myAnts[ant].m_loc, highestNeighbour);
+            Location newLoc = state.getLocation(myAnts[ant].m_loc, highestNeighbour);
+            myAnts[ant].MoveTo(newLoc);
+
+            state.gridValues[newLoc.row][newLoc.col] = 0;
+        }
+        else state.gridValues[myAnts[ant].m_loc.row][myAnts[ant].m_loc.col] = 0;
     }
 
     state.bug << "time taken: " << state.timer.getTime() << "ms" << endl << endl;
@@ -132,19 +101,22 @@ void Bot::SpawnNewAnts()
     }
 }
 
-void Bot::DeleteDeadAnts(int currentAnt)
+void Bot::DeleteDeadAnts()
 {
-    bool antDead = true;
-    // Delete any ant that doesn't exist anymore (ie server responds with ant not existing in that location anymore)
-    for (int i=0; i<state.myAntLocs.size(); i++)
+    for (int ant = 0; ant < myAnts.size(); ant++)
     {
-        if (myAnts[currentAnt].m_loc.row == state.myAntLocs[i].row && myAnts[currentAnt].m_loc.col == state.myAntLocs[i].col)
+        bool antDead = true;
+        // Delete any ant that doesn't exist anymore (ie server responds with ant not existing in that location anymore)
+        for (int i=0; i<state.myAntLocs.size(); i++)
         {
-             antDead = false;
+            if (myAnts[ant].m_loc.row == state.myAntLocs[i].row && myAnts[ant].m_loc.col == state.myAntLocs[i].col)
+            {
+                 antDead = false;
+            }
         }
-    }
-    if (antDead)
-    {
-        myAnts.erase(myAnts.begin() + currentAnt); // Ant location doesn't exist, therefore ant must have died
+        if (antDead)
+        {
+            myAnts.erase(myAnts.begin() + ant); // Ant location doesn't exist, therefore ant must have died
+        }
     }
 }

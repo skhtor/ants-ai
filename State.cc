@@ -113,10 +113,10 @@ void State::updateGridValues()
     {
         for(int col=0; col<cols; col++)
         {
-            gridValues[row][col] += 1;
-
             if (grid[row][col].isWater)
                 gridValues[row][col] = -1;
+            else
+                gridValues[row][col] += 1;
         }
     }
 }
