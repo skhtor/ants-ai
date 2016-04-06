@@ -1,4 +1,5 @@
 #include "Bot.h"
+#include "time.h"
 
 using namespace std;
 
@@ -19,6 +20,7 @@ void Bot::playGame()
     while(cin >> state)
     {
         state.updateVisionInformation();
+        state.updateGridValues();
         SpawnNewAnts();
         DeleteDeadAnts();
         makeMoves();
@@ -56,45 +58,37 @@ void Bot::makeMoves()
                 {
                     state.makeMove(myAnts[ant].m_loc, dir);
                     myAnts[ant].MoveTo(loc);
+                    state.gridValues[loc.row][loc.col] = 0;
                     break;
                 }
             }
         }
         else
         {
-            state.bug << "Ant " << ant << " did not find food, default behaviour ples" << endl;
-            bool antMoved = false;
-            bool looped = false;
-            int dir = myAnts[ant].m_dir;
+            int highestVal = 0; // highest value of neighbours
+            int highestNeighbour = 0; // Index of neighbour with highest value
 
-            while (!antMoved)
-            { // loop until the ant has moved in a direction
-                if (dir >= 4)
+            for (int dir = 0; dir < 4; dir++)
+            {
+                Location tempLoc = state.getLocation(myAnts[ant].m_loc, dir);
+
+                if (state.gridValues[tempLoc.row][tempLoc.col] > highestVal)
                 {
-                    if (!looped)
-                    {
-                        dir = 0;
-                        looped = true;
-                    }
-                    else antMoved = true;
-                    break;
-                }
-
-                Location loc = state.getLocation(myAnts[ant].m_loc, dir);
-
-                if (state.grid[loc.row][loc.col].isWater || state.grid[loc.row][loc.col].ant >= 0)
-                { // if water or ant, change dir
-                    dir++;
-                }
-                else // otherwise location is free and ant will move
-                {
-                    state.makeMove(myAnts[ant].m_loc, dir);
-                    myAnts[ant].MoveTo(loc);
-                    antMoved = true;
+                    highestVal = state.gridValues[tempLoc.row][tempLoc.col];
+                    highestNeighbour = dir;
                 }
             }
 
-            myAnts[ant].m_dir = dir;
+            // If ant isn't blocked by water or other ants
+            if (highestVal > 0)
+            {
+                state.makeMove(myAnts[ant].m_loc, highestNeighbour);
+                Location newLoc = state.getLocation(myAnts[ant].m_loc, highestNeighbour);
+                myAnts[ant].MoveTo(newLoc);
+
+                state.gridValues[newLoc.row][newLoc.col] = 0;
+            }
+            else state.gridValues[myAnts[ant].m_loc.row][myAnts[ant].m_loc.col] = 0;
         }
     } // end myAnts loop
 
@@ -141,6 +135,7 @@ void Bot::DeleteDeadAnts()
     {
         bool antDead = true;
         // Delete any ant that doesn't exist anymore (ie server responds with ant not existing in that location anymore)
+
         for (Location l: state.myAntLocs)
         {
             if (myAnts[ant].m_loc.row == l.row && myAnts[ant].m_loc.col == l.col)

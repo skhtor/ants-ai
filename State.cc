@@ -20,6 +20,7 @@ State::~State()
 void State::setup()
 {
     grid = vector<vector<Square> >(rows, vector<Square>(cols, Square()));
+    gridValues = vector<vector<int> >(rows, vector<int>(cols, int()));
 };
 
 //resets all non-water squares to land and clears the bots ant vector
@@ -105,6 +106,20 @@ void State::updateVisionInformation()
         }
     }
 };
+
+void State::updateGridValues()
+{
+    for(int row=0; row<rows; row++)
+    {
+        for(int col=0; col<cols; col++)
+        {
+            if (grid[row][col].isWater)
+                gridValues[row][col] = -1;
+            else
+                gridValues[row][col] += 1;
+        }
+    }
+}
 
 /*
     This is the output function for a state. It will add a char map
