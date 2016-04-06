@@ -3,7 +3,6 @@
 
 #include "Location.h"
 #include "Node.h"
-#include <map>
 #include <vector>
 #include <queue>
 
@@ -14,7 +13,7 @@ struct Ant
     int m_dir;
 
     std::vector<Node> m_visited;
-    std::queue<Node> m_queue;
+    std::deque<Node> m_queue;
     std::vector<Node> m_path;
 
     // Constructor

@@ -21,7 +21,7 @@ struct Bot
     void endTurn();     //indicates to the engine that it has made its moves
 
     void SpawnNewAnts();
-    void DeleteDeadAnts(int currentAnt);
+    void DeleteDeadAnts();
     std::vector<Location> GetNeighbours(Location loc);
     void SearchRadius(int ant);
 };
