@@ -1,5 +1,6 @@
 #include "Bot.h"
 #include "time.h"
+#include "Node.h"
 
 using namespace std;
 
@@ -37,34 +38,25 @@ void Bot::makeMoves()
     for (int ant = 0; ant < myAnts.size(); ant++)
     { // For each ant
 
-        // Clear all data
-        while (myAnts[ant].m_queue.size() > 0)
-        {
-            myAnts[ant].m_queue.pop_front();
-        }
-        myAnts[ant].m_path.clear();
-        myAnts[ant].m_visited.clear();
-
+        // Reset path to food
+        myAnts[ant].m_nextMove = -1;
         SearchRadius(ant);
 
-        if (myAnts[ant].m_path.size() > 0)
+        // If path exists --> move along the path
+        if (myAnts[ant].m_nextMove != -1)
         {
             state.bug << "Ant " << ant << " is going to food" << endl;
-            for (int dir = 0; dir < 4; dir++)
-            {
-                Location loc = state.getLocation(myAnts[ant].m_loc, dir);
 
-                if (loc.row == myAnts[ant].m_path[0].m_loc.row && loc.col == myAnts[ant].m_path[0].m_loc.col)
-                {
-                    state.makeMove(myAnts[ant].m_loc, dir);
-                    myAnts[ant].MoveTo(loc);
-                    state.gridValues[loc.row][loc.col] = 0;
-                    break;
-                }
-            }
+            int dir = myAnts[ant].m_nextMove;
+            Location loc = state.getLocation(myAnts[ant].m_loc, dir);
+
+            state.makeMove(myAnts[ant].m_loc, dir);
+            myAnts[ant].MoveTo(loc);
+            state.gridValues[loc.row][loc.col] = 0;
         }
-        else
+        else // otherwise perform default behaviour
         {
+            state.bug << "Ant " << ant << " did not find food, default behaviour ples" << endl;
             int highestVal = 0; // highest value of neighbours
             int highestNeighbour = 0; // Index of neighbour with highest value
 
@@ -105,7 +97,7 @@ void Bot::endTurn()
     cout << "go" << endl;
 };
 
-// --------------------------------------------------------------------Methods//
+// --------------------------------------------------------------------Methods
 
 void Bot::SpawnNewAnts()
 {
@@ -150,93 +142,58 @@ void Bot::DeleteDeadAnts()
     } // end myAnts index loop
 }
 
-std::vector<Location> Bot::GetNeighbours(Location loc)
-{
-    std::vector<Location> neighbours;
-
-    for (int dir = 0; dir < 4; dir++)
-    {
-        Location newLoc = state.getLocation(loc, dir);
-
-        if (!state.grid[newLoc.row][newLoc.col].isWater && state.grid[newLoc.row][newLoc.col].ant < 0)
-        {
-            neighbours.push_back(newLoc);
-        }
-    }
-
-    return neighbours;
-};
-
 void Bot::SearchRadius(int ant)
 {
     state.bug << "Ant " << ant << " is searching for food" << endl;
+
+    // Create 2D vector which stores visited locations
+    std::vector<std::vector<bool> > visited(state.rows, std::vector<bool>(state.cols, false));
+
+    // Initialise queue
+    std::deque<Node> queue;
+
+    // Add initial node to queue
     Node node = Node(myAnts[ant].m_loc);
-    myAnts[ant].m_queue.push_back(node);
+    queue.push_back(node);
 
-    while (myAnts[ant].m_queue.size() > 0)
+    float searchStart = state.timer.getTime();
+
+    while (queue.size() > 0 && state.timer.getTime() - searchStart < 1)
     {
-
         // Dequeue node
-        Node currentNode = myAnts[ant].m_queue.front();
-        myAnts[ant].m_queue.pop_front();
+        Node currentNode = queue.front();
+        queue.pop_front();
 
         // Add to visited nodes
-        myAnts[ant].m_visited.push_back(currentNode);
+        visited[currentNode.m_loc.row][currentNode.m_loc.col] = true;
 
         // If target cell, break
         if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isFood)
         {
-            for (Node n: myAnts[ant].m_visited)
-            {
-                if (n.m_id == currentNode.m_predecessor)
-                {
-                    currentNode = Node(n.m_loc, n.m_predecessor);
-                    break;
-                }
-            }
-
-            while (currentNode.m_predecessor != -1)
-            {
-                myAnts[ant].m_path.push_back(currentNode);
-
-                for (Node n: myAnts[ant].m_visited)
-                {
-                    if (n.m_id == currentNode.m_predecessor)
-                    {
-                        currentNode = Node(n.m_loc, n.m_predecessor);
-                        break;
-                    }
-                }
-            }
-            // Reverse the order so path is in order;
-            std::reverse(myAnts[ant].m_path.begin(),myAnts[ant].m_path.end());
+            myAnts[ant].m_nextMove = currentNode.m_firstMove;
             break;
         }
         else
         {
             // Check available surrounding nodes from current node
-            std::vector<Location> neighbours = GetNeighbours(currentNode.m_loc);
-
-            for (Location l: neighbours)
+            for (int d = 0; d < 4; d++)
             {
-                bool visited = false;
-                // Check if not visited
-                for (Node n: myAnts[ant].m_visited)
-                { // for each stored node
-                    if (n.m_loc.row == l.row && n.m_loc.col == l.col)
-                    { // if newLoc is already a found location
-                        visited = true;
-                        break;
-                    }
-                }
+                Location nLoc = state.getLocation(currentNode.m_loc, d);
 
-                if (!visited)
+                if (!visited[nLoc.row][nLoc.col] && // Node is not visited
+                    state.distance(myAnts[ant].m_loc, nLoc) < state.viewradius && // Node is within radius
+                    !state.grid[nLoc.row][nLoc.col].isWater && // Node does not contain water
+                    state.gridValues[nLoc.row][nLoc.col] != 0) // Node does not contain ant
                 {
-                    if (state.distance(myAnts[ant].m_loc, l) <= state.viewradius)
-                    {
-                        state.bug << ".";
-                        myAnts[ant].m_queue.push_back(Node(l, currentNode.m_id));
-                    }
+                    Node nNode = Node(nLoc); // Create new node
+
+                    // Pass through the first move made to get to that node
+                    if (currentNode.m_firstMove == -1)
+                        nNode.AddFirstMove(d);
+                    else
+                        nNode.AddFirstMove(currentNode.m_firstMove);
+
+                    queue.push_back(nNode); // Add node to queue.
                 }
             }
         }

@@ -1,12 +1,15 @@
 CC=g++
 CFLAGS=-O3 -funroll-loops -c
 LDFLAGS=-O2 -lm
-SOURCES=Bot.cc MyBot.cc State.cc Ant.cc Node.cc
+SOURCES=Bot.cc MyBot.cc State.cc Ant.cc
 OBJECTS=$(addsuffix .o, $(basename ${SOURCES}))
 EXECUTABLE=MyBot
 
-#Uncomment the following to enable debugging
-CFLAGS+=-g -DDEBUG
+# Uncomment the following to enable debugging
+#CFLAGS+=-g -DDEBUG
+
+# Here's to enable c++11 extensions
+CFLAGS+=-std=c++11
 
 all: $(OBJECTS) $(EXECUTABLE)
 

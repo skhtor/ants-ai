@@ -4,7 +4,7 @@
 Ant::Ant(Location loc)
 {
     m_loc = loc;
-    m_dir = 0;
+    m_nextMove = -1;
 };
 
 

@@ -10,11 +10,8 @@ struct Ant
 {
     // Attributes
     Location m_loc;
-    int m_dir;
 
-    std::vector<Node> m_visited;
-    std::deque<Node> m_queue;
-    std::vector<Node> m_path;
+    int m_nextMove;
 
     // Constructor
     Ant(Location loc);

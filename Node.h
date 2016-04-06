@@ -8,23 +8,18 @@
 */
 struct Node
 {
-    static int newId;
-    int m_id;
-    int m_predecessor;
+    int m_firstMove;
     Location m_loc;
 
     Node(Location loc)
-        : m_id(newId++)
     {
         m_loc = loc;
-        m_predecessor = -1;
+        m_firstMove = -1;
     };
 
-    Node(Location loc, int predecessor)
-        : m_id(newId++)
+    void AddFirstMove(int firstMove)
     {
-        m_loc = loc;
-        m_predecessor = predecessor;
+        m_firstMove = firstMove;
     };
 };
 
