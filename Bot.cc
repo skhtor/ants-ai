@@ -181,7 +181,7 @@ void Bot::SearchRadius(int ant)
                 Location nLoc = state.getLocation(currentNode.m_loc, d);
 
                 if (!visited[nLoc.row][nLoc.col] && // Node is not visited
-                    state.distance(myAnts[ant].m_loc, nLoc) < state.viewradius && // Node is within radius
+                    state.distance(myAnts[ant].m_loc, nLoc) <= state.viewradius && // Node is within radius
                     !state.grid[nLoc.row][nLoc.col].isWater && // Node does not contain water
                     state.gridValues[nLoc.row][nLoc.col] != 0) // Node does not contain ant
                 {
