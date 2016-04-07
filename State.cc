@@ -136,15 +136,15 @@ ostream& operator<<(ostream &os, const State &state)
             if(state.grid[row][col].isWater)
                 os << '%';
             else if(state.grid[row][col].isFood)
-                os << 'o';
+                os << '*';
             else if(state.grid[row][col].isHill)
-                os << (char)('h' + state.grid[row][col].hillPlayer);
+                os << (char)('A' + state.grid[row][col].hillPlayer);
             else if(state.grid[row][col].ant >= 0)
                 os << (char)('a' + state.grid[row][col].ant);
             else if(state.grid[row][col].isVisible)
-                os << ' ';
-            else
                 os << '.';
+            else
+                os << '?';
         }
         os << endl;
     }
