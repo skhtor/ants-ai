@@ -45,8 +45,6 @@ void Bot::makeMoves()
         // If path exists --> move along the path
         if (myAnts[ant].m_nextMove != -1)
         {
-            state.bug << "Ant " << ant << " is going to food" << endl;
-
             int dir = myAnts[ant].m_nextMove;
             Location loc = state.getLocation(myAnts[ant].m_loc, dir);
 
@@ -56,31 +54,7 @@ void Bot::makeMoves()
         }
         else // otherwise perform default behaviour
         {
-            state.bug << "Ant " << ant << " did not find food, default behaviour ples" << endl;
-            int highestVal = 0; // highest value of neighbours
-            int highestNeighbour = 0; // Index of neighbour with highest value
-
-            for (int dir = 0; dir < 4; dir++)
-            {
-                Location tempLoc = state.getLocation(myAnts[ant].m_loc, dir);
-
-                if (state.gridValues[tempLoc.row][tempLoc.col] > highestVal)
-                {
-                    highestVal = state.gridValues[tempLoc.row][tempLoc.col];
-                    highestNeighbour = dir;
-                }
-            }
-
-            // If ant isn't blocked by water or other ants
-            if (highestVal > 0)
-            {
-                state.makeMove(myAnts[ant].m_loc, highestNeighbour);
-                Location newLoc = state.getLocation(myAnts[ant].m_loc, highestNeighbour);
-                myAnts[ant].MoveTo(newLoc);
-
-                state.gridValues[newLoc.row][newLoc.col] = 0;
-            }
-            else state.gridValues[myAnts[ant].m_loc.row][myAnts[ant].m_loc.col] = 0;
+            MoveToHighVal(ant);
         }
     } // end myAnts loop
 
@@ -200,4 +174,32 @@ void Bot::SearchRadius(int ant)
     } // end while queue size has an element
 
     state.bug << "Ant " << ant << " has completed searching for food" << endl;
+}
+
+void Bot::MoveToHighVal(int ant)
+{
+    int highestVal = 0; // highest value of neighbours
+    int highestNeighbour = 0; // Index of neighbour with highest value
+
+    for (int dir = 0; dir < 4; dir++)
+    {
+        Location tempLoc = state.getLocation(myAnts[ant].m_loc, dir);
+
+        if (state.gridValues[tempLoc.row][tempLoc.col] > highestVal)
+        {
+            highestVal = state.gridValues[tempLoc.row][tempLoc.col];
+            highestNeighbour = dir;
+        }
+    }
+
+    // If ant isn't blocked by water or other ants
+    if (highestVal > 0)
+    {
+        state.makeMove(myAnts[ant].m_loc, highestNeighbour);
+        Location newLoc = state.getLocation(myAnts[ant].m_loc, highestNeighbour);
+        myAnts[ant].MoveTo(newLoc);
+
+        state.gridValues[newLoc.row][newLoc.col] = 0;
+    }
+    else state.gridValues[myAnts[ant].m_loc.row][myAnts[ant].m_loc.col] = 0;
 }
