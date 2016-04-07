@@ -64,6 +64,7 @@ struct State
 
     void updateVisionInformation();
     void updateGridValues();
+    void updateDangerZones();
 };
 
 std::ostream& operator<<(std::ostream &os, const State &state);

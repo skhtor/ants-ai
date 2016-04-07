@@ -12,6 +12,7 @@ struct Ant
     Location m_loc;
 
     int m_nextMove;
+    int m_dir;
 
     // Constructor
     Ant(Location loc);

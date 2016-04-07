@@ -121,6 +121,39 @@ void State::updateGridValues()
     }
 }
 
+void State::updateDangerZones()
+{
+    for (Location e: enemyAntLocs)
+    {
+        // Initialise queue
+        std::deque<Location> queue;
+
+        queue.push_back(e);
+
+        //float searchStart = state.timer.getTime();
+
+        while (queue.size() > 0) // && state.timer.getTime() - searchStart < 1)
+        {
+            // Dequeue node
+            Location currentLoc = queue.front();
+            queue.pop_front();
+
+            // Add to visited nodes
+            gridValues[currentLoc.row][currentLoc.col] = 0;
+            // Check available surrounding nodes from current node
+            for (int d = 0; d < 4; d++)
+            {
+                Location nLoc = getLocation(currentLoc, d);
+
+                if (distance(e, nLoc) <= attackradius*2) // Node is within attack radius
+                {
+                    queue.push_back(nLoc); // Add node to queue.
+                }
+            } // end for loop for each direction
+        } // end while queue size has an element
+    }
+}
+
 /*
     This is the output function for a state. It will add a char map
     representation of the state to the output stream passed to it.
