@@ -11,14 +11,18 @@ struct Ant
     // Attributes
     Location m_loc;
 
+    // BFS pathfinding
     int m_nextMove;
     int m_dir;
+
+    // Combat stats
+    int m_nearbyAllies;
 
     // Constructor
     Ant(Location loc);
 
     // Setter
-    void MoveTo(Location loc);
+    void MoveTo(Location loc, int dir);
 };
 
 #endif //ANT_H_

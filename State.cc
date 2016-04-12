@@ -115,6 +115,8 @@ void State::updateGridValues()
         {
             if (grid[row][col].isWater)
                 gridValues[row][col] = -1;
+            else if (grid[row][col].ant >= 0)
+                gridValues[row][col] = 0;
             else
                 gridValues[row][col] += 1;
         }

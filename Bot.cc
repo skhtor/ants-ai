@@ -1,6 +1,8 @@
 #include "Bot.h"
 #include "time.h"
 #include "Node.h"
+#include <iterator>
+#include <math.h>
 
 using namespace std;
 
@@ -50,10 +52,8 @@ void Bot::makeMoves()
             Location loc = state.getLocation(myAnts[ant].m_loc, dir);
 
             state.makeMove(myAnts[ant].m_loc, dir);
-            myAnts[ant].MoveTo(loc);
+            myAnts[ant].MoveTo(loc, dir);
             state.gridValues[loc.row][loc.col] = 0;
-
-            myAnts[ant].m_dir = dir;
         }
         else // otherwise perform default behaviour
         {
@@ -197,11 +197,73 @@ void Bot::MoveToHighVal(int ant)
     {
         state.makeMove(myAnts[ant].m_loc, bestDir);
         Location newLoc = state.getLocation(myAnts[ant].m_loc, bestDir);
-        myAnts[ant].MoveTo(newLoc);
+        myAnts[ant].MoveTo(newLoc, bestDir);
 
         state.gridValues[newLoc.row][newLoc.col] = 0;
     }
     else state.gridValues[myAnts[ant].m_loc.row][myAnts[ant].m_loc.col] = 0;
-
-    myAnts[ant].m_dir = bestDir;
 }
+
+// Calculating nearby ants
+
+void Bot::NearbyAllies()
+{
+    // Reset
+    for (Ant a: myAnts)
+        a.m_nearbyAllies = 0;
+
+    // Iterate through and count nearby ants
+	std::vector<Ant>::iterator a = myAnts.begin();
+	while (a.next != NULL)
+    {
+
+		Ant ant1 = a.next();
+
+		std::vector<Ant>::iterator b = myAnts.rbegin();
+		Ant ant2 = b.next();
+
+		while (ant1 != ant2)
+        {
+			int d = state.distance(ant1.m_loc, ant2.m_loc);
+
+			if (d <= sqrt(50))
+            {
+				ant1.m_nearbyAllies++;
+				ant2.m_nearbyAllies++;
+			}
+
+			ant2 = b.next();
+		}
+	}
+}
+
+// void Bot::NearbyEnemies()
+// {
+//
+// 	for (Ant ant : myAnts)
+//     {
+// 		myAnt.tile.oldAnt = myAnt;
+// 		for (Ant enemyAnt : enemyAnts)
+//         {
+// 			int d = state.distance(myAnt.m_loc, enemyAnt.m_loc);
+//
+// 			if (dist <= 81) {
+// 				myAnt.closeEnemyDists.put(dist, enemyAnt);
+// 				enemyAnt.closeEnemyDists.put(dist, myAnt);
+// 				myAnt.closeEnemyDistsSum += dist;
+// 				enemyAnt.closeEnemyDistsSum += dist;
+// 				if (dx + dy <= 5 && !((dx == 0 && dy == 5) || (dy == 0 && dx == 5))) {
+// 					if (!myAnt.isIndirectlyDangered) myAnt.isIndirectlyDangered = true;
+// 					myAnt.gammaDistEnemies.add(enemyAnt);
+// 					enemyAnt.gammaDistEnemies.add(myAnt);
+// 					if (!myAnt.isDangered && dx + dy <= 4 && !((dx == 0 && dy == 4) || (dy == 0 && dx == 4))) {
+// 						myAnt.isDangered = true;
+// 						dangeredAnts.add(myAnt);
+// 					}
+// 				}
+// 			}
+// 		}
+// 		if (!myAnt.closeEnemyDists.isEmpty())
+// 			myAnt.closestEnemyTile = myAnt.closeEnemyDists.firstEntry().getValue().tile;
+// 	}
+// }
