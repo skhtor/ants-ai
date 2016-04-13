@@ -209,6 +209,7 @@ void Bot::MoveToHighVal(int ant)
     int bestDir = 0; // Index of neighbour with highest value
 
     int waterCount = 0;
+    Location deadEnd;
 
     for (int d = myAnts[ant]->m_dir; d < myAnts[ant]->m_dir + 4; d++)
     {
@@ -224,6 +225,10 @@ void Bot::MoveToHighVal(int ant)
             bestDir = dir;
         }
     }
+    if (waterCount == 3)
+    {
+        deadEnd = myAnts[ant]->m_loc;
+    }
 
     // If ant isn't blocked by water or other ants
     if (highestVal > 0)
@@ -236,8 +241,7 @@ void Bot::MoveToHighVal(int ant)
     }
     else state.gridValues[myAnts[ant]->m_loc.row][myAnts[ant]->m_loc.col] = 0;
 
-    if (waterCount == 3)
-        state.gridValues[myAnts[ant]->m_loc.row][myAnts[ant]->m_loc.col] = -1;
+    state.gridValues[deadEnd.row][deadEnd.col] = -1;
 }
 
 // Calculating nearby ants
