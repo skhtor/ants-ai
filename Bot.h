@@ -10,7 +10,7 @@ struct Bot
 {
     // Attributes
     State state;
-    std::vector<Ant> myAnts;
+    std::vector<Ant*> myAnts;
 
     // Constructor
     Bot();
@@ -20,11 +20,15 @@ struct Bot
     void makeMoves();   //makes moves for a single turn
     void endTurn();     //indicates to the engine that it has made its moves
 
+    // Initialise Turn
     void SpawnNewAnts();
     void DeleteDeadAnts();
+    void PlaceAntsInSquares();
+    void ResetAntDirections();
+    void NearbyAllies();
 
     void MoveToHighVal(int ant);
-    void SearchRadius(int ant);
+    void SearchRadius();
 };
 
 #endif //BOT_H_

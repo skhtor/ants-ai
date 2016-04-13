@@ -1,6 +1,7 @@
 #ifndef SQUARE_H_
 #define SQUARE_H_
 
+#include "Ant.h"
 #include <vector>
 
 /*
@@ -11,6 +12,8 @@ struct Square
     bool isVisible, isWater, isHill, isFood;
     int ant, hillPlayer;
     std::vector<int> deadAnts;
+
+    Ant* myAnt;
 
     Square()
     {
@@ -26,6 +29,7 @@ struct Square
         isFood = 0;
         ant = hillPlayer = -1;
         deadAnts.clear();
+        myAnt = NULL;
     };
 };
 

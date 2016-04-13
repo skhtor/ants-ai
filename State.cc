@@ -117,7 +117,7 @@ void State::updateGridValues()
                 gridValues[row][col] = -1;
             else if (grid[row][col].ant >= 0)
                 gridValues[row][col] = 0;
-            else
+            else if (gridValues[row][col] != -1)
                 gridValues[row][col] += 1;
         }
     }

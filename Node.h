@@ -8,18 +8,22 @@
 */
 struct Node
 {
-    int m_firstMove;
+    int m_lastMove;
     Location m_loc;
+
+    int g;
+    int h;
+    int f;
 
     Node(Location loc)
     {
         m_loc = loc;
-        m_firstMove = -1;
+        m_lastMove = -1;
     };
 
-    void AddFirstMove(int firstMove)
+    void AddFirstMove(int lastMove)
     {
-        m_firstMove = firstMove;
+        m_lastMove = lastMove;
     };
 };
 

@@ -14,6 +14,7 @@ struct Ant
     // BFS pathfinding
     int m_nextMove;
     int m_dir;
+    double m_distanceToFood;
 
     // Combat stats
     int m_nearbyAllies;
