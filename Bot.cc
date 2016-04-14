@@ -56,6 +56,19 @@ void Bot::makeMoves()
         if (myAnts[ant]->m_nearbyEnemies > myAnts[ant]->m_nearbyAllies)
             dangeredAnts.push_back(myAnts[ant]);
 
+        // if (dangeredAnts.size() > 0)
+        // {
+        //     int randomIndex = rand() % dangeredAnts.size();
+        for (Ant* dAnt: dangeredAnts)
+        {
+            if (state.distance(myAnts[ant]->m_loc, dAnt->m_loc) < sqrt(1800))
+            {
+                //aStar(ant, dAnt->m_loc);
+                state.bug << endl;
+            }
+        }
+
+        // }
         if (!myAnts[ant]->m_moved)
         {
             // If path exists --> move along the path
