@@ -24,9 +24,11 @@ struct Bot
     void SpawnNewAnts();
     void DeleteDeadAnts();
     void PlaceAntsInSquares();
-    void ResetAntDirections();
+    void ResetAnts();
     void NearbyAllies();
 
+    void GuardBase();
+    void GuardBase2();
     void MoveToHighVal(int ant);
     void SearchRadius();
 };

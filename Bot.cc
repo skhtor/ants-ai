@@ -28,6 +28,7 @@ void Bot::playGame()
         SpawnNewAnts();
         DeleteDeadAnts();
         PlaceAntsInSquares();
+        ResetAnts();
         makeMoves();
         endTurn();
     }
@@ -39,29 +40,35 @@ void Bot::makeMoves()
     state.bug << "turn " << state.turn << ":" << endl;
     state.bug << state << endl;
 
-    ResetAntDirections();
     SearchRadius();
+
+    if (myAnts.size() > 10)
+        GuardBase();
+    if (myAnts.size() > 50)
+        GuardBase2();
 
     for (int ant = 0; ant < myAnts.size(); ant++)
     { // For each ant
 
-        state.bug << "Ant moving in direction: " << myAnts[ant]->m_nextMove << endl;
-        // If path exists --> move along the path
-        if (myAnts[ant]->m_nextMove != -1)
+        if (!myAnts[ant]->m_moved)
         {
-            int dir = myAnts[ant]->m_nextMove;
-            Location loc = state.getLocation(myAnts[ant]->m_loc, dir);
-
-            if (state.gridValues[loc.row][loc.col] > 0)
+            // If path exists --> move along the path
+            if (myAnts[ant]->m_nextMove != -1)
             {
-                state.makeMove(myAnts[ant]->m_loc, dir);
-                myAnts[ant]->MoveTo(loc, dir);
-                state.gridValues[loc.row][loc.col] = 0;
+                int dir = myAnts[ant]->m_nextMove;
+                Location loc = state.getLocation(myAnts[ant]->m_loc, dir);
+
+                if (state.gridValues[loc.row][loc.col] > 0)
+                {
+                    state.makeMove(myAnts[ant]->m_loc, dir);
+                    myAnts[ant]->MoveTo(loc, dir);
+                    state.gridValues[loc.row][loc.col] = 0;
+                }
             }
-        }
-        else // otherwise perform default behaviour
-        {
-            MoveToHighVal(ant);
+            else // otherwise perform default behaviour
+            {
+                MoveToHighVal(ant);
+            }
         }
     } // end myAnts loop
 
@@ -134,12 +141,13 @@ void Bot::PlaceAntsInSquares()
     }
 }
 
-void Bot::ResetAntDirections()
+void Bot::ResetAnts()
 {
     for (Ant* a: myAnts)
     {
         a->m_nextMove = -1;
         a->m_distanceToFood = 99999;
+        a->m_moved = false;
     }
 }
 
@@ -158,9 +166,9 @@ void Bot::SearchRadius()
         Node node = Node(f);
         queue.push_back(node);
 
-        //float searchStart = state.timer.getTime();
+        float searchStart = state.timer.getTime();
 
-        while (queue.size())// > 0 && state.timer.getTime() - searchStart < 1)
+        while (queue.size() > 0 && state.timer.getTime() - searchStart < 1)
         {
             // Dequeue node
             Node currentNode = queue.front();
@@ -201,6 +209,28 @@ void Bot::SearchRadius()
             }
         } // End while queue size has an element
     } // End loop of each food location
+}
+
+void Bot::GuardBase()
+{
+    for (Location h: state.myHills)
+    {
+        if (state.grid[h.row][h.col - 1].ant >= 0)
+            state.grid[h.row][h.col - 1].myAnt->m_moved = true;
+        else if (state.grid[h.row][h.col + 1].ant >= 0)
+            state.grid[h.row][h.col + 1].myAnt->m_moved = true;
+    }
+}
+
+void Bot::GuardBase2()
+{
+    for (Location h: state.myHills)
+    {
+        if (state.grid[h.row][h.col - 1].ant >= 0)
+            state.grid[h.row][h.col - 1].myAnt->m_moved = true;
+        if (state.grid[h.row][h.col + 1].ant >= 0)
+            state.grid[h.row][h.col + 1].myAnt->m_moved = true;
+    }
 }
 
 void Bot::MoveToHighVal(int ant)
