@@ -12,6 +12,8 @@ struct Bot
     State state;
     std::vector<Ant*> myAnts;
 
+    std::vector<Ant*> dangeredAnts;
+
     // Constructor
     Bot();
 
@@ -26,6 +28,8 @@ struct Bot
     void PlaceAntsInSquares();
     void ResetAnts();
     void NearbyAllies();
+    void NearbyEnemies();
+    void ClearDangerZones();
 
     void GuardBase();
     void GuardBase2();

@@ -40,15 +40,21 @@ void Bot::makeMoves()
     state.bug << "turn " << state.turn << ":" << endl;
     state.bug << state << endl;
 
+    dangeredAnts.clear();
     SearchRadius();
+    NearbyAllies();
+    NearbyEnemies();
 
-    if (myAnts.size() > 10)
-        GuardBase();
     if (myAnts.size() > 50)
         GuardBase2();
+    else if (myAnts.size() > 10)
+        GuardBase();
 
     for (int ant = 0; ant < myAnts.size(); ant++)
     { // For each ant
+
+        if (myAnts[ant]->m_nearbyEnemies > myAnts[ant]->m_nearbyAllies)
+            dangeredAnts.push_back(myAnts[ant]);
 
         if (!myAnts[ant]->m_moved)
         {
@@ -278,32 +284,63 @@ void Bot::MoveToHighVal(int ant)
 
 void Bot::NearbyAllies()
 {
-    // Reset
-    // for (Ant* a: myAnts)
-    //     a->m_nearbyAllies = 0;
-    //
-    // // Iterate through and count nearby ants
-	// std::vector<Ant*>::iterator a = myAnts.begin();
-    //
-	// while (a != myAnts.end())
-    // {
-    //
-	// 	std::vector<Ant*>::iterator b = myAnts.end();
-    //     std::advance(b, -1);
-    //
-	// 	while (a != b)
-    //     {
-	// 		int d = state.distance(*a->m_loc, *b->m_loc);
-    //
-	// 		if (d <= sqrt(50))
-    //         {
-	// 			a->m_nearbyAllies++;
-	// 			b->m_nearbyAllies++;
-	// 		}
-    //
-    //         std::advance(b, -1);
-	// 	}
-	// }
+    for (Ant* a: myAnts)
+        a->m_nearbyAllies = 0;
+
+    // Iterate through and count nearby ants
+	std::vector<Ant*>::iterator a = myAnts.begin();
+
+	while (a != myAnts.end())
+    {
+		std::vector<Ant*>::iterator b = myAnts.end();
+        std::advance(b, -1);
+
+		while (a != b)
+        {
+			int d = state.distance((*a)->m_loc, (*b)->m_loc);
+
+			if (d <= sqrt(50))
+            {
+				(*a)->m_nearbyAllies++;
+				(*b)->m_nearbyAllies++;
+			}
+
+            std::advance(b, -1);
+		} //
+        std::advance(a, 1);
+	}
+}
+
+void Bot::NearbyEnemies()
+{
+    for (Ant* a: myAnts)
+        a->m_nearbyEnemies = 0;
+
+    // Iterate through and count nearby ants
+	std::vector<Ant*>::iterator a = myAnts.begin();
+
+	while (a != myAnts.end())
+    {
+		std::vector<Location>::iterator b = state.enemyAntLocs.begin();
+
+		while (b != state.enemyAntLocs.end())
+        {
+			int d = state.distance((*a)->m_loc, *b);
+
+			if (d <= sqrt(50))
+            {
+				(*a)->m_nearbyEnemies++;
+			}
+
+            std::advance(b, 1);
+		} //
+        std::advance(a, 1);
+	}
+
+    for (Ant* a: myAnts)
+    {
+        state.bug << a->m_nearbyEnemies << " ";
+    }
 }
 
 // void Bot::NearbyEnemies()

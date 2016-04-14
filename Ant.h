@@ -19,6 +19,7 @@ struct Ant
 
     // Combat stats
     int m_nearbyAllies;
+    int m_nearbyEnemies;
 
     // Constructor
     Ant(Location loc);

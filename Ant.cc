@@ -7,6 +7,7 @@ Ant::Ant(Location loc)
     m_nextMove = -1;
     m_dir = 0;
     m_nearbyAllies = 0;
+    m_nearbyEnemies = 0;
     m_distanceToFood = 0;
 };
 
