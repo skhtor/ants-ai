@@ -13,6 +13,8 @@ struct Bot
     std::vector<Ant*> myAnts;
 
     std::vector<Ant*> dangeredAnts;
+    std::vector<std::vector<bool> > enemyHillsGrid;
+    std::vector<Location> enemyHills;
 
     // Constructor
     Bot();
@@ -30,11 +32,22 @@ struct Bot
     void NearbyAllies();
     void NearbyEnemies();
     void ClearDangerZones();
+    void EnemyHills();
 
+    // Defence
     void GuardBase();
     void GuardBase2();
-    void MoveToHighVal(int ant);
-    void SearchRadius();
+
+    // Explore
+    void MoveToHighVal(Ant* ant);
+
+    // BFS
+    void SearchRadius(std::vector<Location> locations);
+
+    // A*
+    void AStar(Ant* ant, Location dest);
+    int EstimateCost(Location from, Location to);
+    int IndNodeSmallestF(std::deque<Node> queue);
 };
 
 #endif //BOT_H_
