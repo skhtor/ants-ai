@@ -131,16 +131,15 @@ void Bot::SearchRadius(int ant)
     Node node = Node(myAnts[ant].m_loc);
     queue.push_back(node);
 
-    float searchStart = state.timer.getTime();
+    visited[node.m_loc.row][node.m_loc.col] = true;
 
-    while (queue.size() > 0 && state.timer.getTime() - searchStart < 1)
+    //float searchStart = state.timer.getTime();
+
+    while (queue.size() > 0)// && state.timer.getTime() - searchStart < 1)
     {
         // Dequeue node
         Node currentNode = queue.front();
         queue.pop_front();
-
-        // Add to visited nodes
-        visited[currentNode.m_loc.row][currentNode.m_loc.col] = true;
 
         // If target cell, break
         if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isFood)
@@ -169,6 +168,7 @@ void Bot::SearchRadius(int ant)
                         nNode.AddFirstMove(currentNode.m_firstMove);
 
                     queue.push_back(nNode); // Add node to queue
+                    visited[nNode.m_loc.row][nNode.m_loc.col] = true;
                 }
             }
         }
@@ -206,36 +206,36 @@ void Bot::MoveToHighVal(int ant)
 
 // Calculating nearby ants
 
-void Bot::NearbyAllies()
-{
-    // Reset
-    for (Ant a: myAnts)
-        a.m_nearbyAllies = 0;
-
-    // Iterate through and count nearby ants
-	std::vector<Ant>::iterator a = myAnts.begin();
-	while (a.next != NULL)
-    {
-
-		Ant ant1 = a.next();
-
-		std::vector<Ant>::iterator b = myAnts.rbegin();
-		Ant ant2 = b.next();
-
-		while (ant1 != ant2)
-        {
-			int d = state.distance(ant1.m_loc, ant2.m_loc);
-
-			if (d <= sqrt(50))
-            {
-				ant1.m_nearbyAllies++;
-				ant2.m_nearbyAllies++;
-			}
-
-			ant2 = b.next();
-		}
-	}
-}
+// void Bot::NearbyAllies()
+// {
+//     // Reset
+//     for (Ant a: myAnts)
+//         a.m_nearbyAllies = 0;
+//
+//     // Iterate through and count nearby ants
+// 	std::vector<Ant>::iterator a = myAnts.begin();
+// 	while (a.next != NULL)
+//     {
+//
+// 		Ant ant1 = a.next();
+//
+// 		std::vector<Ant>::iterator b = myAnts.rbegin();
+// 		Ant ant2 = b.next();
+//
+// 		while (ant1 != ant2)
+//         {
+// 			int d = state.distance(ant1.m_loc, ant2.m_loc);
+//
+// 			if (d <= sqrt(50))
+//             {
+// 				ant1.m_nearbyAllies++;
+// 				ant2.m_nearbyAllies++;
+// 			}
+//
+// 			ant2 = b.next();
+// 		}
+// 	}
+// }
 
 // void Bot::NearbyEnemies()
 // {
