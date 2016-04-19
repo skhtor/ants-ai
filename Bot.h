@@ -10,7 +10,7 @@ struct Bot
 {
     // Attributes
     State state;
-    std::vector<Ant> myAnts;
+    std::vector<Ant*> myAnts;
 
     // Constructor
     Bot();
@@ -23,8 +23,8 @@ struct Bot
     void SpawnNewAnts();
     void DeleteDeadAnts();
 
-    void MoveToHighVal(int ant);
-    void SearchRadius(int ant);
+    void MoveToHighVal(Ant* ant);
+    void SearchRadius(Ant* ant);
 };
 
 #endif //BOT_H_
