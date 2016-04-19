@@ -22,9 +22,13 @@ struct Bot
 
     void SpawnNewAnts();
     void DeleteDeadAnts();
+    void PlaceAntsInSquares();
 
     void MoveToHighVal(Ant* ant);
     void SearchRadius(Ant* ant);
+
+    void GuardBase();
+    void GuardBase2();
 };
 
 #endif //BOT_H_

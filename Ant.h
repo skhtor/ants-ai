@@ -10,6 +10,7 @@ struct Ant
 {
     // Attributes
     Location m_loc;
+    bool m_moved;
 
     // BFS pathfinding
     int m_nextMove;

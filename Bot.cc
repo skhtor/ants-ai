@@ -38,26 +38,36 @@ void Bot::makeMoves()
     state.bug << "turn " << state.turn << ":" << endl;
     state.bug << state << endl;
 
+    PlaceAntsInSquares();
+
+    if (myAnts.size() > 10)
+    {
+        GuardBase();
+    }
+
     for (Ant* ant: myAnts)
     { // For each ant
 
-        // Reset path to food
-        ant->m_nextMove = -1;
-        SearchRadius(ant);
-
-        // If path exists --> move along the path
-        if (ant->m_nextMove != -1)
+        if (!ant->m_moved)
         {
-            int dir = ant->m_nextMove;
-            Location loc = state.getLocation(ant->m_loc, dir);
+            // Reset path to food
+            ant->m_nextMove = -1;
+            SearchRadius(ant);
 
-            state.makeMove(ant->m_loc, dir);
-            ant->MoveTo(loc, dir);
-            state.gridValues[loc.row][loc.col] = 0;
-        }
-        else // otherwise perform default behaviour
-        {
-            MoveToHighVal(ant);
+            // If path exists --> move along the path
+            if (ant->m_nextMove != -1)
+            {
+                int dir = ant->m_nextMove;
+                Location loc = state.getLocation(ant->m_loc, dir);
+
+                state.makeMove(ant->m_loc, dir);
+                ant->MoveTo(loc, dir);
+                state.gridValues[loc.row][loc.col] = 0;
+            }
+            else // otherwise perform default behaviour
+            {
+                MoveToHighVal(ant);
+            }
         }
     } // end myAnts loop
 
@@ -144,9 +154,10 @@ void Bot::SearchRadius(Ant* ant)
         queue.pop_front();
 
         // If target cell, break
-        if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isFood)
+        if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isFood || // If food
+            (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].isHill &&
+                state.grid[currentNode.m_loc.row][currentNode.m_loc.col].hillPlayer != 0)) // If enemy hill
         {
-            state.bug << "Food found!" << endl;
             ant->m_nextMove = currentNode.m_firstMove;
             break;
         }
@@ -217,6 +228,45 @@ void Bot::MoveToHighVal(Ant* ant)
     else state.gridValues[ant->m_loc.row][ant->m_loc.col] = 0;
 
     state.gridValues[deadEnd.row][deadEnd.col] = -1;
+}
+
+void Bot::PlaceAntsInSquares()
+{
+    for (int row = 0; row < state.rows; row++)
+    {
+        for (int col = 0; col < state.cols; col++)
+        {
+
+            state.grid[row][col].myAnt = NULL;
+        }
+    }
+
+    for (Ant* ant: myAnts)
+    {
+        state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
+    }
+}
+
+void Bot::GuardBase()
+{
+    for (Location h: state.myHills)
+    {
+        if (state.grid[h.row][h.col - 1].ant >= 0)
+            state.grid[h.row][h.col - 1].myAnt->m_moved = true;
+        else if (state.grid[h.row][h.col + 1].ant >= 0)
+            state.grid[h.row][h.col + 1].myAnt->m_moved = true;
+    }
+}
+
+void Bot::GuardBase2()
+{
+    for (Location h: state.myHills)
+    {
+        if (state.grid[h.row][h.col - 1].ant >= 0)
+            state.grid[h.row][h.col - 1].myAnt->m_moved = true;
+        if (state.grid[h.row][h.col + 1].ant >= 0)
+            state.grid[h.row][h.col + 1].myAnt->m_moved = true;
+    }
 }
 
 // Calculating nearby ants
