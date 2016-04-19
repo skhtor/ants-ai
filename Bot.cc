@@ -291,6 +291,47 @@ void Bot::MoveToHighVal(Ant* ant)
     state.gridValues[deadEnd.row][deadEnd.col] = -1;
 }
 
+void Bot::MoveToLowVal(Ant* ant)
+{
+    int lowestVal = 0; // highest value of neighbours
+    int bestDir = 0; // Index of neighbour with highest value
+
+    int waterCount = 0;
+    Location deadEnd;
+
+    for (int d = ant->m_dir; d < ant->m_dir + 4; d++)
+    {
+        int dir = d % 4;
+        Location tempLoc = state.getLocation(ant->m_loc, dir);
+
+        if (state.grid[tempLoc.row][tempLoc.col].isWater)
+            waterCount++;
+
+        if (state.gridValues[tempLoc.row][tempLoc.col] < lowestVal)
+        {
+            lowestVal = state.gridValues[tempLoc.row][tempLoc.col];
+            bestDir = dir;
+        }
+    }
+    if (waterCount == 3)
+    {
+        deadEnd = ant->m_loc;
+    }
+
+    // If ant isn't blocked by water or other ants
+    if (lowestVal > 0)
+    {
+        state.makeMove(ant->m_loc, bestDir);
+        Location newLoc = state.getLocation(ant->m_loc, bestDir);
+        ant->MoveTo(newLoc, bestDir);
+
+        state.gridValues[newLoc.row][newLoc.col] = 0;
+    }
+    else state.gridValues[ant->m_loc.row][ant->m_loc.col] = 0;
+
+    state.gridValues[deadEnd.row][deadEnd.col] = -1;
+}
+
 // Calculating nearby ants
 
 void Bot::NearbyAllies()

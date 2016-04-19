@@ -40,6 +40,7 @@ struct Bot
 
     // Explore
     void MoveToHighVal(Ant* ant);
+    void MoveToLowVal(Ant* ant);
 
     // BFS
     void SearchRadius(std::vector<Location> locations);
