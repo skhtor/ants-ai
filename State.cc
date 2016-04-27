@@ -20,7 +20,6 @@ State::~State()
 void State::setup()
 {
     grid = vector<vector<Square> >(rows, vector<Square>(cols, Square()));
-    gridValues = vector<vector<int> >(rows, vector<int>(cols, int()));
 };
 
 //resets all non-water squares to land and clears the bots ant vector
@@ -114,11 +113,25 @@ void State::updateGridValues()
         for(int col=0; col<cols; col++)
         {
             if (grid[row][col].isWater)
-                gridValues[row][col] = -1;
+                grid[row][col].value = -1;
+            else if (grid[row][col].hillPlayer == 0)
+                grid[row][col].value = -1;
             else if (grid[row][col].ant >= 0)
-                gridValues[row][col] = 0;
-            else if (gridValues[row][col] != -1)
-                gridValues[row][col] += 1;
+                grid[row][col].value = 0;
+            else if (grid[row][col].value != -1)
+            {
+                double closestHillDistance = 99999;
+                Location loc = Location(row, col);
+
+                for (Location h: myHills)
+                {
+                    if (distance(loc, h) <= closestHillDistance)
+                    {
+                        closestHillDistance = distance(loc, h);
+                    }
+                }
+                grid[row][col].value += closestHillDistance;
+            }
         }
     }
 }
@@ -141,7 +154,7 @@ void State::updateDangerZones()
             queue.pop_front();
 
             // Add to visited nodes
-            gridValues[currentLoc.row][currentLoc.col] = 0;
+            grid[currentLoc.row][currentLoc.col].value = 0;
             // Check available surrounding nodes from current node
             for (int d = 0; d < 4; d++)
             {

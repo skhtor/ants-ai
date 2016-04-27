@@ -41,17 +41,36 @@ void Bot::makeMoves()
     state.bug << "turn " << state.turn << ":" << endl;
     state.bug << state << endl;
 
-    dangeredAnts.clear();
+    //dangeredAnts.clear();
     SearchRadius(state.enemyHills);
     SearchRadius(state.food);
-    NearbyAllies();
-    NearbyEnemies();
-    EnemyHills();
+    //NearbyAllies();
+    //NearbyEnemies();
+    //EnemyHills();
 
-    if (myAnts.size() > 50)
-        GuardBase2();
-    else if (myAnts.size() > 10)
-        GuardBase();
+    for (Location h: enemyHills)
+    {
+        state.bug << "(" << h.row << ", " << h.col << "), ";
+    }
+    state.bug << endl;
+
+    for (Location e: state.enemyAntLocs)
+    {
+        for (Location base: state.myHills)
+        {
+            if (state.distance(e, base) <= state.viewradius * 1.5 && BaseInDanger(base))
+            {
+                UltimateGuardBase(base);
+            }
+        }
+    }
+
+    // if (myAnts.size() > 100)
+    //     GuardBase3();
+    // else if (myAnts.size() > 50)
+    //     GuardBase2();
+    // else if (myAnts.size() > 10)
+    //     GuardBase();
 
     for (Ant* ant: myAnts)
     { // For each ant
@@ -63,10 +82,10 @@ void Bot::makeMoves()
         // {
         //     int randomIndex = rand() % dangeredAnts.size();
 
-        if (enemyHills.size() > 0)
-        {
-            //AStar(ant, enemyHills[0]);
-        }
+        // if (enemyHills.size() > 0)
+        // {
+        //     AStar(ant, enemyHills[0]);
+        // }
 
         // }
         if (!ant->m_moved)
@@ -77,11 +96,11 @@ void Bot::makeMoves()
                 int dir = ant->m_nextMove;
                 Location loc = state.getLocation(ant->m_loc, dir);
 
-                if (state.gridValues[loc.row][loc.col] > 0)
+                if (state.grid[loc.row][loc.col].value > 0)
                 {
                     state.makeMove(ant->m_loc, dir);
                     ant->MoveTo(loc, dir);
-                    state.gridValues[loc.row][loc.col] = 0;
+                    state.grid[loc.row][loc.col].value = 0;
                 }
             }
             else // otherwise perform default behaviour
@@ -172,7 +191,7 @@ void Bot::ResetAnts()
 
 void Bot::SearchRadius(std::vector<Location> locations)
 {
-    for (Location f: locations)
+    for (Location l: locations)
     {
         // Create 2D vector which stores visited locations
         std::vector<std::vector<bool> > visited(state.rows, std::vector<bool>(state.cols, false));
@@ -181,7 +200,7 @@ void Bot::SearchRadius(std::vector<Location> locations)
         std::deque<Node> queue;
 
         // Add initial node to queue
-        Node node = Node(f);
+        Node node = Node(l);
         queue.push_back(node);
         visited[node.m_loc.row][node.m_loc.col] = true;
 
@@ -198,9 +217,9 @@ void Bot::SearchRadius(std::vector<Location> locations)
             {
                 Ant* a = state.grid[currentNode.m_loc.row][currentNode.m_loc.col].myAnt;
 
-                if (state.distance(f, currentNode.m_loc) < a->m_distanceToFood)
+                if (state.distance(l, currentNode.m_loc) < a->m_distanceToFood)
                 {
-                    a->m_distanceToFood = state.distance(f, currentNode.m_loc);
+                    a->m_distanceToFood = state.distance(l, currentNode.m_loc);
                     a->m_nextMove = (currentNode.m_lastMove + 2) % 4;
                 }
             }
@@ -212,7 +231,7 @@ void Bot::SearchRadius(std::vector<Location> locations)
                     Location nLoc = state.getLocation(currentNode.m_loc, d);
 
                     if (!visited[nLoc.row][nLoc.col] && // Node is not visited
-                        state.distance(f, nLoc) <= state.viewradius && // Node is within radius
+                        state.distance(l, nLoc) <= state.viewradius && // Node is within radius
                         !state.grid[nLoc.row][nLoc.col].isWater) // Node does not contain water
                     {
                         Node nNode = Node(nLoc); // Create new node
@@ -228,35 +247,137 @@ void Bot::SearchRadius(std::vector<Location> locations)
     } // End loop of each food location
 }
 
+bool Bot::BaseInDanger(Location h)
+{
+    // Create 2D vector which stores visited locations
+    std::vector<std::vector<bool> > visited(state.rows, std::vector<bool>(state.cols, false));
+
+    // Initialise queue
+    std::deque<Node> queue;
+
+    // Add initial node to queue
+    Node node = Node(h);
+    queue.push_back(node);
+    visited[node.m_loc.row][node.m_loc.col] = true;
+
+    float searchStart = state.timer.getTime();
+
+    while (queue.size() > 0 && state.timer.getTime() - searchStart < 1)
+    {
+        // Dequeue node
+        Node currentNode = queue.front();
+        queue.pop_front();
+
+        // If target cell, break
+        if (state.grid[currentNode.m_loc.row][currentNode.m_loc.col].ant >= 1)
+        {
+            return true;
+        }
+        else
+        {
+            // Check available surrounding nodes from current node
+            for (int d = 0; d < 4; d++)
+            {
+                Location nLoc = state.getLocation(currentNode.m_loc, d);
+
+                if (!visited[nLoc.row][nLoc.col] && // Node is not visited
+                    state.distance(h, nLoc) <= state.viewradius * 1.5 && // Node is within radius
+                    !state.grid[nLoc.row][nLoc.col].isWater) // Node does not contain water
+                {
+                    Node nNode = Node(nLoc); // Create new node
+
+                    // Pass through the first move made to get to that node
+                    nNode.AddFirstMove(d);
+                    queue.push_back(nNode); // Add node to queue
+                    visited[nNode.m_loc.row][nNode.m_loc.col] = true;
+                }
+            } // End loop of each diction 0, 1, 2, 3
+        }
+    } // End while queue size has an element
+    return false;
+}
+
+// Place 1 ant next to base
 void Bot::GuardBase()
 {
     for (Location h: state.myHills)
     {
-        if (state.grid[h.row][h.col - 1].ant >= 0)
+        if (state.grid[h.row][h.col - 1].ant == 0)
             state.grid[h.row][h.col - 1].myAnt->m_moved = true;
-        else if (state.grid[h.row][h.col + 1].ant >= 0)
+        else if (state.grid[h.row][h.col + 1].ant == 0)
             state.grid[h.row][h.col + 1].myAnt->m_moved = true;
     }
 }
 
+// Place 2 ants next to base
 void Bot::GuardBase2()
 {
     for (Location h: state.myHills)
     {
-        if (state.grid[h.row][h.col - 1].ant >= 0)
+        if (state.grid[h.row][h.col - 1].ant == 0)
             state.grid[h.row][h.col - 1].myAnt->m_moved = true;
-        if (state.grid[h.row][h.col + 1].ant >= 0)
+        if (state.grid[h.row][h.col + 1].ant == 0)
             state.grid[h.row][h.col + 1].myAnt->m_moved = true;
     }
 }
 
+void Bot::GuardBase3()
+{
+    for (Location h: state.myHills)
+    {
+        if (state.grid[h.row - 1][h.col - 1].ant == 0)
+            state.grid[h.row - 1][h.col - 1].myAnt->m_moved = true;
+        if (state.grid[h.row - 1][h.col + 1].ant == 0)
+            state.grid[h.row - 1][h.col + 1].myAnt->m_moved = true;
+        if (state.grid[h.row + 1][h.col - 1].ant == 0)
+            state.grid[h.row + 1][h.col - 1].myAnt->m_moved = true;
+        if (state.grid[h.row + 1][h.col + 1].ant == 0)
+            state.grid[h.row + 1][h.col + 1].myAnt->m_moved = true;
+    }
+}
+
+void Bot::UltimateGuardBase(Location h)
+{
+    // North
+    if (state.grid[h.row - 1][h.col - 2].ant == 0)
+        state.grid[h.row - 1][h.col - 2].myAnt->m_moved = true;
+    if (state.grid[h.row][h.col - 2].ant == 0)
+        state.grid[h.row][h.col - 2].myAnt->m_moved = true;
+    if (state.grid[h.row + 1][h.col - 2].ant == 0)
+        state.grid[h.row + 1][h.col - 2].myAnt->m_moved = true;
+
+    // East
+    if (state.grid[h.row + 2][h.col - 1].ant == 0)
+        state.grid[h.row + 2][h.col - 1].myAnt->m_moved = true;
+    if (state.grid[h.row + 2][h.col].ant == 0)
+        state.grid[h.row + 2][h.col].myAnt->m_moved = true;
+    if (state.grid[h.row + 2][h.col + 1].ant == 0)
+        state.grid[h.row + 2][h.col + 1].myAnt->m_moved = true;
+
+    // South
+    if (state.grid[h.row - 1][h.col + 2].ant == 0)
+        state.grid[h.row - 1][h.col + 2].myAnt->m_moved = true;
+    if (state.grid[h.row][h.col + 2].ant == 0)
+        state.grid[h.row][h.col + 2].myAnt->m_moved = true;
+    if (state.grid[h.row + 1][h.col + 2].ant == 0)
+        state.grid[h.row + 1][h.col + 2].myAnt->m_moved = true;
+
+    // West
+    if (state.grid[h.row - 2][h.col - 1].ant == 0)
+        state.grid[h.row - 2][h.col - 1].myAnt->m_moved = true;
+    if (state.grid[h.row - 2][h.col].ant == 0)
+        state.grid[h.row - 2][h.col].myAnt->m_moved = true;
+    if (state.grid[h.row - 2][h.col + 1].ant == 0)
+        state.grid[h.row - 2][h.col + 1].myAnt->m_moved = true;
+}
+
+// Move to the highest valued square in the surroundings
 void Bot::MoveToHighVal(Ant* ant)
 {
-    int highestVal = 0; // highest value of neighbours
+    double highestVal = 0; // highest value of neighbours
     int bestDir = 0; // Index of neighbour with highest value
 
     int waterCount = 0;
-    Location deadEnd;
 
     for (int d = ant->m_dir; d < ant->m_dir + 4; d++)
     {
@@ -266,15 +387,15 @@ void Bot::MoveToHighVal(Ant* ant)
         if (state.grid[tempLoc.row][tempLoc.col].isWater)
             waterCount++;
 
-        if (state.gridValues[tempLoc.row][tempLoc.col] > highestVal)
+        if (state.grid[tempLoc.row][tempLoc.col].value > highestVal)
         {
-            highestVal = state.gridValues[tempLoc.row][tempLoc.col];
+            highestVal = state.grid[tempLoc.row][tempLoc.col].value;
             bestDir = dir;
         }
     }
     if (waterCount == 3)
     {
-        deadEnd = ant->m_loc;
+        state.grid[ant->m_loc.row][ant->m_loc.col].value = -1;
     }
 
     // If ant isn't blocked by water or other ants
@@ -284,52 +405,9 @@ void Bot::MoveToHighVal(Ant* ant)
         Location newLoc = state.getLocation(ant->m_loc, bestDir);
         ant->MoveTo(newLoc, bestDir);
 
-        state.gridValues[newLoc.row][newLoc.col] = 0;
+        state.grid[newLoc.row][newLoc.col].value = 0;
     }
-    else state.gridValues[ant->m_loc.row][ant->m_loc.col] = 0;
-
-    state.gridValues[deadEnd.row][deadEnd.col] = -1;
-}
-
-void Bot::MoveToLowVal(Ant* ant)
-{
-    int lowestVal = 0; // highest value of neighbours
-    int bestDir = 0; // Index of neighbour with highest value
-
-    int waterCount = 0;
-    Location deadEnd;
-
-    for (int d = ant->m_dir; d < ant->m_dir + 4; d++)
-    {
-        int dir = d % 4;
-        Location tempLoc = state.getLocation(ant->m_loc, dir);
-
-        if (state.grid[tempLoc.row][tempLoc.col].isWater)
-            waterCount++;
-
-        if (state.gridValues[tempLoc.row][tempLoc.col] < lowestVal)
-        {
-            lowestVal = state.gridValues[tempLoc.row][tempLoc.col];
-            bestDir = dir;
-        }
-    }
-    if (waterCount == 3)
-    {
-        deadEnd = ant->m_loc;
-    }
-
-    // If ant isn't blocked by water or other ants
-    if (lowestVal > 0)
-    {
-        state.makeMove(ant->m_loc, bestDir);
-        Location newLoc = state.getLocation(ant->m_loc, bestDir);
-        ant->MoveTo(newLoc, bestDir);
-
-        state.gridValues[newLoc.row][newLoc.col] = 0;
-    }
-    else state.gridValues[ant->m_loc.row][ant->m_loc.col] = 0;
-
-    state.gridValues[deadEnd.row][deadEnd.col] = -1;
+    else state.grid[ant->m_loc.row][ant->m_loc.col].value = 0;
 }
 
 // Calculating nearby ants
@@ -358,7 +436,7 @@ void Bot::NearbyAllies()
 			}
 
             std::advance(b, -1);
-		} //
+		}
         std::advance(a, 1);
 	}
 }
@@ -385,7 +463,7 @@ void Bot::NearbyEnemies()
 			}
 
             std::advance(b, 1);
-		} //
+		}
         std::advance(a, 1);
 	}
 }
@@ -445,7 +523,7 @@ void Bot::AStar(Ant* ant, Location dest)
         // If target cell, break
         if (currentNode.m_loc == dest) // FIXME check if comparison works
         {
-            state.bug << "Destination found!" << endl;
+            //state.bug << "Destination found!" << endl;
             ant->m_nextMove = currentNode.m_lastMove;
             break;
         }
@@ -457,7 +535,7 @@ void Bot::AStar(Ant* ant, Location dest)
                 Location nLoc = state.getLocation(currentNode.m_loc, d);
 
                 if (!visited[nLoc.row][nLoc.col] &&
-                    state.gridValues[nLoc.row][nLoc.col] > 0 && // Node does not contain ant
+                    state.grid[nLoc.row][nLoc.col].value > 0 && // Node does not contain ant
                     !state.grid[nLoc.row][nLoc.col].isWater) // Node does not contain water
                 {
                     Node nNode = Node(nLoc); // Create new node
@@ -466,7 +544,7 @@ void Bot::AStar(Ant* ant, Location dest)
                     nNode.h = EstimateCost(nNode.m_loc, dest);
                     nNode.f = nNode.g + nNode.h;
 
-                    state.bug << "last move: " << currentNode.m_lastMove << endl;
+                    //state.bug << "last move: " << currentNode.m_lastMove << endl;
                     // Pass through the first move made to get to that node
                     if (currentNode.m_lastMove == -1)
                         nNode.AddFirstMove(d);
@@ -480,7 +558,7 @@ void Bot::AStar(Ant* ant, Location dest)
                         {
     						if (queue[i].f > nNode.f)
                             {
-                                state.bug << "Inserted at: " << i << endl;
+                                //state.bug << "Inserted at: " << i << endl;
     							queue.insert(queue.begin() + i, nNode);
     							break;
     						}
@@ -488,7 +566,7 @@ void Bot::AStar(Ant* ant, Location dest)
 
                         if (i == size)
                         {
-                            state.bug << "Inserted at end" << endl;
+                            //state.bug << "Inserted at end" << endl;
                             queue.push_back(nNode);
                         }
                         visited[currentNode.m_loc.row][currentNode.m_loc.col] = true;

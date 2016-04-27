@@ -37,10 +37,12 @@ struct Bot
     // Defence
     void GuardBase();
     void GuardBase2();
+    void GuardBase3();
+    bool BaseInDanger(Location h);
+    void UltimateGuardBase(Location h);
 
     // Explore
     void MoveToHighVal(Ant* ant);
-    void MoveToLowVal(Ant* ant);
 
     // BFS
     void SearchRadius(std::vector<Location> locations);

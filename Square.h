@@ -13,6 +13,7 @@ struct Square
     int ant, hillPlayer;
     std::vector<int> deadAnts;
 
+    double value;
     Ant* myAnt;
 
     Square()
