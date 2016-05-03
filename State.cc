@@ -131,6 +131,15 @@ void State::updateGridValues()
                     }
                 }
                 grid[row][col].value += closestHillDistance;
+
+                for (Location h: enemyHills)
+                {
+                    double value = viewradius * 2 - distance(h, loc);
+                    if (value > 0)
+                    {
+                        grid[row][col].value += value;
+                    }
+                }
             }
         }
     }

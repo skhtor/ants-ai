@@ -48,22 +48,30 @@ void Bot::makeMoves()
     //NearbyEnemies();
     //EnemyHills();
 
-    for (Location h: enemyHills)
+    for (Location base: state.myHills)
     {
-        state.bug << "(" << h.row << ", " << h.col << "), ";
-    }
-    state.bug << endl;
-
-    for (Location e: state.enemyAntLocs)
-    {
-        for (Location base: state.myHills)
+        for (Location e: state.enemyAntLocs)
         {
-            if (state.distance(e, base) <= state.viewradius * 1.5 && BaseInDanger(base))
+            if (myAnts.size() > 50)
             {
-                UltimateGuardBase(base);
+                if (state.distance(e, base) <= state.viewradius &&
+                    BaseInDanger(base, state.viewradius))
+                {
+                    UltimateGuardBase(base);
+                    break;
+                }
             }
-        }
-    }
+            else
+            {
+                if (state.distance(e, base) <= state.viewradius &&
+                    BaseInDanger(base, state.viewradius))
+                {
+                    GuardBase(base);
+                    break;
+                }
+            }
+        } // end loop through visible enemies
+    } // end loop through bases
 
     // if (myAnts.size() > 100)
     //     GuardBase3();
@@ -133,7 +141,7 @@ void Bot::SpawnNewAnts()
         bool spawnAnt = true;
         for (Ant* ant: myAnts)
         { // check that location against all of our stored Ants
-            if (ant->m_loc.row == l.row && ant->m_loc.col == l.col)
+            if (ant->m_loc == l)
             { // if we have an ant at that location, don't spawn it
                  spawnAnt = false;
             }
@@ -156,7 +164,7 @@ void Bot::DeleteDeadAnts()
 
         for (Location l: state.myAntLocs)
         {
-            if (myAnts[ant]->m_loc.row == l.row && myAnts[ant]->m_loc.col == l.col)
+            if (myAnts[ant]->m_loc == l)
             {
                  antDead = false;
             }
@@ -247,7 +255,7 @@ void Bot::SearchRadius(std::vector<Location> locations)
     } // End loop of each food location
 }
 
-bool Bot::BaseInDanger(Location h)
+bool Bot::BaseInDanger(Location h, double maxDist)
 {
     // Create 2D vector which stores visited locations
     std::vector<std::vector<bool> > visited(state.rows, std::vector<bool>(state.cols, false));
@@ -281,7 +289,7 @@ bool Bot::BaseInDanger(Location h)
                 Location nLoc = state.getLocation(currentNode.m_loc, d);
 
                 if (!visited[nLoc.row][nLoc.col] && // Node is not visited
-                    state.distance(h, nLoc) <= state.viewradius * 1.5 && // Node is within radius
+                    state.distance(h, nLoc) <= maxDist && // Node is within radius
                     !state.grid[nLoc.row][nLoc.col].isWater) // Node does not contain water
                 {
                     Node nNode = Node(nLoc); // Create new node
@@ -297,78 +305,93 @@ bool Bot::BaseInDanger(Location h)
     return false;
 }
 
-// Place 1 ant next to base
-void Bot::GuardBase()
+void Bot::GuardBase(Location h)
 {
-    for (Location h: state.myHills)
-    {
-        if (state.grid[h.row][h.col - 1].ant == 0)
-            state.grid[h.row][h.col - 1].myAnt->m_moved = true;
-        else if (state.grid[h.row][h.col + 1].ant == 0)
-            state.grid[h.row][h.col + 1].myAnt->m_moved = true;
-    }
-}
+    int count = 0;
 
-// Place 2 ants next to base
-void Bot::GuardBase2()
-{
-    for (Location h: state.myHills)
+    std::vector<Location> corners = {
+        Location(h.row - 1, h.col - 1), // North West
+        Location(h.row - 1, h.col + 1), // South West
+        Location(h.row + 1, h.col - 1), // North East
+        Location(h.row + 1, h.col + 1), // South East
+    };
+    
+    for (Location corner: corners)
     {
-        if (state.grid[h.row][h.col - 1].ant == 0)
-            state.grid[h.row][h.col - 1].myAnt->m_moved = true;
-        if (state.grid[h.row][h.col + 1].ant == 0)
-            state.grid[h.row][h.col + 1].myAnt->m_moved = true;
+        if (state.grid[corner.row][corner.col].ant == 0)
+        {
+            if (state.grid[corner.row][corner.col].myAnt != NULL)
+            {
+                state.grid[corner.row][corner.col].myAnt->m_moved = true;
+                state.grid[corner.row][corner.col].value = 0;
+                count++;
+            }
+        }
+        else if (state.grid[corner.row][corner.col].isWater) count++;
+        else state.grid[corner.row][corner.col].value = 500;
     }
-}
 
-void Bot::GuardBase3()
-{
-    for (Location h: state.myHills)
+    // Corners are filled
+    if (count == 4)
     {
-        if (state.grid[h.row - 1][h.col - 1].ant == 0)
-            state.grid[h.row - 1][h.col - 1].myAnt->m_moved = true;
-        if (state.grid[h.row - 1][h.col + 1].ant == 0)
-            state.grid[h.row - 1][h.col + 1].myAnt->m_moved = true;
-        if (state.grid[h.row + 1][h.col - 1].ant == 0)
-            state.grid[h.row + 1][h.col - 1].myAnt->m_moved = true;
-        if (state.grid[h.row + 1][h.col + 1].ant == 0)
-            state.grid[h.row + 1][h.col + 1].myAnt->m_moved = true;
+        std::vector<Location> edges = {
+            Location(h.row, h.col - 1), // North
+            Location(h.row, h.col + 1), // South
+            Location(h.row - 1, h.col), // West
+            Location(h.row + 1, h.col), // East
+        };
+
+        for (Location edge: edges)
+        {
+            if (state.grid[edge.row][edge.col].ant == 0)
+            {
+                if (state.grid[edge.row][edge.col].myAnt != NULL)
+                {
+                    state.grid[edge.row][edge.col].myAnt->m_moved = true; // North
+                    state.grid[edge.row][edge.col].value = 0;
+                }
+            }
+            else
+                state.grid[edge.row][edge.col].value = 500;
+        }
     }
 }
 
 void Bot::UltimateGuardBase(Location h)
 {
-    // North
-    if (state.grid[h.row - 1][h.col - 2].ant == 0)
-        state.grid[h.row - 1][h.col - 2].myAnt->m_moved = true;
-    if (state.grid[h.row][h.col - 2].ant == 0)
-        state.grid[h.row][h.col - 2].myAnt->m_moved = true;
-    if (state.grid[h.row + 1][h.col - 2].ant == 0)
-        state.grid[h.row + 1][h.col - 2].myAnt->m_moved = true;
+    std::vector<Location> perimeter = {
+        // North
+        Location(h.row - 1, h.col - 2),
+        Location(h.row, h.col - 2),
+        Location(h.row + 1, h.col - 2),
+        // South
+        Location(h.row - 1, h.col + 2),
+        Location(h.row, h.col + 2),
+        Location(h.row + 1, h.col + 2),
+        // East
+        Location(h.row + 2, h.col - 1),
+        Location(h.row + 2, h.col),
+        Location(h.row + 2, h.col + 1),
+        // West
+        Location(h.row - 2, h.col - 1),
+        Location(h.row - 2, h.col),
+        Location(h.row - 2, h.col + 1),
+    };
 
-    // East
-    if (state.grid[h.row + 2][h.col - 1].ant == 0)
-        state.grid[h.row + 2][h.col - 1].myAnt->m_moved = true;
-    if (state.grid[h.row + 2][h.col].ant == 0)
-        state.grid[h.row + 2][h.col].myAnt->m_moved = true;
-    if (state.grid[h.row + 2][h.col + 1].ant == 0)
-        state.grid[h.row + 2][h.col + 1].myAnt->m_moved = true;
-
-    // South
-    if (state.grid[h.row - 1][h.col + 2].ant == 0)
-        state.grid[h.row - 1][h.col + 2].myAnt->m_moved = true;
-    if (state.grid[h.row][h.col + 2].ant == 0)
-        state.grid[h.row][h.col + 2].myAnt->m_moved = true;
-    if (state.grid[h.row + 1][h.col + 2].ant == 0)
-        state.grid[h.row + 1][h.col + 2].myAnt->m_moved = true;
-
-    // West
-    if (state.grid[h.row - 2][h.col - 1].ant == 0)
-        state.grid[h.row - 2][h.col - 1].myAnt->m_moved = true;
-    if (state.grid[h.row - 2][h.col].ant == 0)
-        state.grid[h.row - 2][h.col].myAnt->m_moved = true;
-    if (state.grid[h.row - 2][h.col + 1].ant == 0)
-        state.grid[h.row - 2][h.col + 1].myAnt->m_moved = true;
+    for (Location fort: perimeter)
+    {
+        if (state.grid[fort.row][fort.col].ant == 0)
+        {
+            if (state.grid[fort.row][fort.col].myAnt != NULL)
+            {
+                state.grid[fort.row][fort.col].myAnt->m_moved = true;
+            }
+        }
+        else if (!state.grid[fort.row][fort.col].isWater)
+        {
+            state.grid[fort.row][fort.col].value = 500;
+        }
+    }
 }
 
 // Move to the highest valued square in the surroundings

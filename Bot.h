@@ -35,10 +35,8 @@ struct Bot
     void EnemyHills();
 
     // Defence
-    void GuardBase();
-    void GuardBase2();
-    void GuardBase3();
-    bool BaseInDanger(Location h);
+    void GuardBase(Location h);
+    bool BaseInDanger(Location h, double maxDist);
     void UltimateGuardBase(Location h);
 
     // Explore
