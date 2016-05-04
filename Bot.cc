@@ -149,7 +149,7 @@ void Bot::makeMoves()
                 state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
                 state.makeMove(ant->m_loc, dir);
                 ant->MoveTo(loc, dir);
-                state.grid[ant->m_loc.row][ant->m_loc.col].value += 0.75;
+                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
                 state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
                 // }
                 break;
@@ -401,7 +401,7 @@ void Bot::GuardBase(Location h)
                 if (state.grid[edge.row][edge.col].myAnt != NULL)
                 {
                     state.grid[edge.row][edge.col].myAnt->m_moved = true; // North
-                    state.grid[edge.row][edge.col].value = 0;
+                    state.grid[edge.row][edge.col].value *= 0;
                 }
             }
             else
@@ -460,6 +460,8 @@ void Bot::MoveToHighVal(Ant* ant)
         int dir = d % 4;
         Location tempLoc = state.getLocation(ant->m_loc, dir);
 
+        if (state.grid[tempLoc.row][tempLoc.col].ant == 0)
+            continue;
         if (state.grid[tempLoc.row][tempLoc.col].isWater)
             waterCount++;
 
@@ -481,9 +483,9 @@ void Bot::MoveToHighVal(Ant* ant)
         Location newLoc = state.getLocation(ant->m_loc, bestDir);
         ant->MoveTo(newLoc, bestDir);
 
-        state.grid[newLoc.row][newLoc.col].value = 0;
+        state.grid[newLoc.row][newLoc.col].value *= 0.75;
     }
-    else state.grid[ant->m_loc.row][ant->m_loc.col].value = 0;
+    else state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
 }
 
 // Calculating nearby ants
@@ -611,7 +613,7 @@ void Bot::AStar(Ant* ant, Location dest)
                 Location nLoc = state.getLocation(currentNode.m_loc, d);
 
                 if (!visited[nLoc.row][nLoc.col] &&
-                    state.grid[nLoc.row][nLoc.col].value > 0 && // Node does not contain ant
+                    state.grid[nLoc.row][nLoc.col].ant != 0 && // Node does not contain ant
                     !state.grid[nLoc.row][nLoc.col].isWater) // Node does not contain water
                 {
                     Node nNode = Node(nLoc); // Create new node

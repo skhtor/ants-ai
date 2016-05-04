@@ -112,13 +112,13 @@ void State::updateGridValues()
     {
         for(int col=0; col<cols; col++)
         {
-            if (grid[row][col].isWater)
+            if (grid[row][col].isWater) // Never go to water
                 grid[row][col].value = -1;
-            else if (grid[row][col].hillPlayer == 0)
+            else if (grid[row][col].hillPlayer == 0) // Never go to hill
                 grid[row][col].value = -1;
-            else if (grid[row][col].ant >= 0)
-                grid[row][col].value = 0;
-            else if (grid[row][col].value != -1)
+            else if (grid[row][col].ant == 0) // Don't add value to squares with ants
+                grid[row][col].value += 0;
+            else if (grid[row][col].value != -1) // Add euclidean distance from hills to squares each turn
             {
                 double closestHillDistance = 99999;
                 Location loc = Location(row, col);
