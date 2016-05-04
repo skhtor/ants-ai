@@ -3,6 +3,7 @@
 
 #include "Location.h"
 #include "Node.h"
+#include "Mission.h"
 #include <vector>
 #include <queue>
 
@@ -11,6 +12,8 @@ struct Ant
     // Attributes
     Location m_loc;
     bool m_moved;
+    bool m_retreat;
+    Mission m_mission;
 
     // BFS pathfinding
     int m_nextMove;

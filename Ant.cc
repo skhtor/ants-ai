@@ -9,6 +9,8 @@ Ant::Ant(Location loc)
     m_nearbyAllies = 0;
     m_nearbyEnemies = 0;
     m_distanceToFood = 0;
+    m_retreat = false;
+    m_mission = EXPLORE;
 };
 
 // Setters

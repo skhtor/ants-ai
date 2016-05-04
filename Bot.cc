@@ -1,6 +1,7 @@
 #include "Bot.h"
 #include "time.h"
 #include "Node.h"
+#include "Mission.h"
 #include <iterator>
 #include <math.h>
 
@@ -42,8 +43,8 @@ void Bot::makeMoves()
     state.bug << state << endl;
 
     //dangeredAnts.clear();
-    SearchRadius(state.enemyHills);
-    SearchRadius(state.food);
+    SearchRadius(state.enemyHills, ATTACKHILL);
+    SearchRadius(state.food, PICKUPFOOD);
     //NearbyAllies();
     //NearbyEnemies();
     //EnemyHills();
@@ -96,24 +97,74 @@ void Bot::makeMoves()
         // }
 
         // }
-        if (!ant->m_moved)
+        switch(ant->m_mission)
         {
-            // If path exists --> move along the path
-            if (ant->m_nextMove != -1)
+            case EXPLORE:
+            {
+                MoveToHighVal(ant);
+                break;
+            }
+
+            case PICKUPFOOD:
             {
                 int dir = ant->m_nextMove;
                 Location loc = state.getLocation(ant->m_loc, dir);
 
-                if (state.grid[loc.row][loc.col].value > 0)
+                if (state.grid[loc.row][loc.col].ant != 0)
                 {
+                    state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
                     state.makeMove(ant->m_loc, dir);
                     ant->MoveTo(loc, dir);
-                    state.grid[loc.row][loc.col].value = 0;
+                    state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
+                    state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
                 }
+                break;
             }
-            else // otherwise perform default behaviour
+
+            case ATTACKHILL:
+            {
+                int dir = ant->m_nextMove;
+                Location loc = state.getLocation(ant->m_loc, dir);
+
+                // bool safePath = true;
+                //
+                // for (Location enemy: state.enemyAntLocs)
+                // {
+                //     if (state.distance(loc, enemy) <= state.attackradius*1.5)
+                //         safePath = false;
+                // }
+                // if (!safePath)
+                // {
+                //     if (ant->m_retreat)
+                //         dir = ant->m_dir;
+                //     else
+                //         dir = (ant->m_dir + 2) % 4;
+                //     loc = state.getLocation(ant->m_loc, dir);
+                //     ant->m_retreat = true;
+                // }
+                // else ant->m_retreat = false;
+                //
+                // if (state.grid[loc.row][loc.col].ant != 0)
+                // {
+                state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
+                state.makeMove(ant->m_loc, dir);
+                ant->MoveTo(loc, dir);
+                state.grid[ant->m_loc.row][ant->m_loc.col].value += 0.75;
+                state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
+                // }
+                break;
+            }
+
+            case DEFEND:
+            {
+                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
+                break;
+            }
+
+            default:
             {
                 MoveToHighVal(ant);
+                break;
             }
         }
     } // end myAnts loop
@@ -194,10 +245,11 @@ void Bot::ResetAnts()
         a->m_nextMove = -1;
         a->m_distanceToFood = 99999;
         a->m_moved = false;
+        a->m_mission = EXPLORE;
     }
 }
 
-void Bot::SearchRadius(std::vector<Location> locations)
+void Bot::SearchRadius(std::vector<Location> locations, Mission mission)
 {
     for (Location l: locations)
     {
@@ -229,6 +281,7 @@ void Bot::SearchRadius(std::vector<Location> locations)
                 {
                     a->m_distanceToFood = state.distance(l, currentNode.m_loc);
                     a->m_nextMove = (currentNode.m_lastMove + 2) % 4;
+                    a->m_mission = mission;
                 }
             }
             else
@@ -315,7 +368,7 @@ void Bot::GuardBase(Location h)
         Location(h.row + 1, h.col - 1), // North East
         Location(h.row + 1, h.col + 1), // South East
     };
-    
+
     for (Location corner: corners)
     {
         if (state.grid[corner.row][corner.col].ant == 0)

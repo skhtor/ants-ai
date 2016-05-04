@@ -43,7 +43,7 @@ struct Bot
     void MoveToHighVal(Ant* ant);
 
     // BFS
-    void SearchRadius(std::vector<Location> locations);
+    void SearchRadius(std::vector<Location> locations, Mission mission);
 
     // A*
     void AStar(Ant* ant, Location dest);
