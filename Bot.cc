@@ -97,6 +97,10 @@ void Bot::makeMoves()
         // }
 
         // }
+
+        // Testing purposes
+        //ant->m_mission = EXPLORE;
+
         switch(ant->m_mission)
         {
             case EXPLORE:

@@ -56,6 +56,16 @@ double State::distance(const Location &loc1, const Location &loc2)
     return sqrt(dr*dr + dc*dc);
 };
 
+// returns manhatten distance
+int State::manDistance(const Location &loc1, const Location &loc2)
+{
+    int d1 = abs(loc1.row-loc2.row),
+        d2 = abs(loc1.col-loc2.col),
+        dr = min(d1, rows-d1),
+        dc = min(d2, cols-d2);
+    return dr + dc;
+};
+
 //returns the new location from moving in a given direction with the edges wrapped
 Location State::getLocation(const Location &loc, int direction)
 {
@@ -121,6 +131,7 @@ void State::updateGridValues()
             else if (grid[row][col].value != -1) // Add euclidean distance from hills to squares each turn
             {
                 double closestHillDistance = 99999;
+                Location closestHill;
                 Location loc = Location(row, col);
 
                 for (Location h: myHills)
@@ -128,9 +139,10 @@ void State::updateGridValues()
                     if (distance(loc, h) <= closestHillDistance)
                     {
                         closestHillDistance = distance(loc, h);
+                        closestHill = h;
                     }
                 }
-                grid[row][col].value += closestHillDistance;
+                grid[row][col].value += manDistance(loc, closestHill);
 
                 for (Location h: enemyHills)
                 {
