@@ -63,7 +63,6 @@ struct State
     Location getLocation(const Location &startLoc, int direction);
 
     void updateVisionInformation();
-    void updateGridValues();
     void updateDangerZones();
 };
 

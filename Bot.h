@@ -41,6 +41,7 @@ struct Bot
 
     // Explore
     void MoveToHighVal(Ant* ant);
+    void UpdateGridValues();
 
     // BFS
     void SearchRadius(std::vector<Location> locations, Mission mission);

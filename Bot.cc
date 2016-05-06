@@ -25,7 +25,7 @@ void Bot::playGame()
     while(cin >> state)
     {
         state.updateVisionInformation();
-        state.updateGridValues();
+        UpdateGridValues();
         //state.updateDangerZones();
         SpawnNewAnts();
         DeleteDeadAnts();
@@ -49,38 +49,22 @@ void Bot::makeMoves()
     //NearbyEnemies();
     //EnemyHills();
 
+    // Defence
     for (Location base: state.myHills)
     {
         for (Location e: state.enemyAntLocs)
         {
-            if (myAnts.size() > 50)
+            if (state.distance(e, base) <= state.viewradius &&
+                BaseInDanger(base, state.viewradius))
             {
-                if (state.distance(e, base) <= state.viewradius &&
-                    BaseInDanger(base, state.viewradius))
-                {
-                    UltimateGuardBase(base);
-                    break;
-                }
-            }
-            else
-            {
-                if (state.distance(e, base) <= state.viewradius &&
-                    BaseInDanger(base, state.viewradius))
-                {
-                    GuardBase(base);
-                    break;
-                }
+                state.bug << "Guarding base" << endl;
+                GuardBase(base);
+                break;
             }
         } // end loop through visible enemies
     } // end loop through bases
 
-    // if (myAnts.size() > 100)
-    //     GuardBase3();
-    // else if (myAnts.size() > 50)
-    //     GuardBase2();
-    // else if (myAnts.size() > 10)
-    //     GuardBase();
-
+    // Make moves on each ant
     for (Ant* ant: myAnts)
     { // For each ant
 
@@ -119,7 +103,7 @@ void Bot::makeMoves()
                     state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
                     state.makeMove(ant->m_loc, dir);
                     ant->MoveTo(loc, dir);
-                    state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
+                    state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
                     state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
                 }
                 break;
@@ -153,7 +137,7 @@ void Bot::makeMoves()
                 state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
                 state.makeMove(ant->m_loc, dir);
                 ant->MoveTo(loc, dir);
-                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
+                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
                 state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
                 // }
                 break;
@@ -161,7 +145,7 @@ void Bot::makeMoves()
 
             case DEFEND:
             {
-                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
+                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
                 break;
             }
 
@@ -247,7 +231,6 @@ void Bot::ResetAnts()
     for (Ant* a: myAnts)
     {
         a->m_nextMove = -1;
-        a->m_distanceToFood = 99999;
         a->m_moved = false;
         a->m_mission = EXPLORE;
     }
@@ -255,6 +238,11 @@ void Bot::ResetAnts()
 
 void Bot::SearchRadius(std::vector<Location> locations, Mission mission)
 {
+    for (Ant* a: myAnts)
+    {
+        a->m_distanceToFood = 99999;
+    }
+
     for (Location l: locations)
     {
         // Create 2D vector which stores visited locations
@@ -268,9 +256,9 @@ void Bot::SearchRadius(std::vector<Location> locations, Mission mission)
         queue.push_back(node);
         visited[node.m_loc.row][node.m_loc.col] = true;
 
-        float searchStart = state.timer.getTime();
+        //float searchStart = state.timer.getTime();
 
-        while (queue.size() > 0 && state.timer.getTime() - searchStart < 1)
+        while (queue.size() > 0) // && state.timer.getTime() - searchStart < 1)
         {
             // Dequeue node
             Node currentNode = queue.front();
@@ -325,9 +313,9 @@ bool Bot::BaseInDanger(Location h, double maxDist)
     queue.push_back(node);
     visited[node.m_loc.row][node.m_loc.col] = true;
 
-    float searchStart = state.timer.getTime();
+    //float searchStart = state.timer.getTime();
 
-    while (queue.size() > 0 && state.timer.getTime() - searchStart < 1)
+    while (queue.size() > 0) // && state.timer.getTime() - searchStart < 1)
     {
         // Dequeue node
         Node currentNode = queue.front();
@@ -379,7 +367,7 @@ void Bot::GuardBase(Location h)
         {
             if (state.grid[corner.row][corner.col].myAnt != NULL)
             {
-                state.grid[corner.row][corner.col].myAnt->m_moved = true;
+                state.grid[corner.row][corner.col].myAnt->m_mission = DEFEND;
                 state.grid[corner.row][corner.col].value = 0;
                 count++;
             }
@@ -404,7 +392,7 @@ void Bot::GuardBase(Location h)
             {
                 if (state.grid[edge.row][edge.col].myAnt != NULL)
                 {
-                    state.grid[edge.row][edge.col].myAnt->m_moved = true; // North
+                    state.grid[edge.row][edge.col].myAnt->m_mission = DEFEND; // North
                     state.grid[edge.row][edge.col].value *= 0;
                 }
             }
@@ -487,9 +475,9 @@ void Bot::MoveToHighVal(Ant* ant)
         Location newLoc = state.getLocation(ant->m_loc, bestDir);
         ant->MoveTo(newLoc, bestDir);
 
-        state.grid[newLoc.row][newLoc.col].value *= 0.75;
+        state.grid[newLoc.row][newLoc.col].value *= 0.5;
     }
-    else state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.75;
+    else state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
 }
 
 // Calculating nearby ants
@@ -684,4 +672,52 @@ int Bot::IndNodeSmallestF(std::deque<Node> queue)
     }
 
     return smallestIndex;
+}
+
+void Bot::UpdateGridValues()
+{
+    for(int row = 0; row < state.rows; row++)
+    {
+        for(int col = 0; col < state.cols; col++)
+        {
+            if (state.grid[row][col].isWater) // Never go to water
+                state.grid[row][col].value = -1;
+            else if (state.grid[row][col].hillPlayer == 0) // Never go to hill
+                state.grid[row][col].value = -1;
+            else if (state.grid[row][col].ant == 0) // Don't add value to squares with ants
+                state.grid[row][col].value += 0;
+            else if (state.grid[row][col].value != -1) // Add euclidean distance from hills to squares each turn
+            {
+                if (myAnts.size() > 50)
+                {
+                    double closestHillDistance = 99999;
+                    Location closestHill;
+                    Location loc = Location(row, col);
+
+                    for (Location h: state.myHills)
+                    {
+                        if (state.distance(loc, h) <= closestHillDistance)
+                        {
+                            closestHillDistance = state.distance(loc, h);
+                            closestHill = h;
+                        }
+                    }
+                    state.grid[row][col].value += state.manDistance(loc, closestHill);
+
+                    for (Location h: state.enemyHills)
+                    {
+                        double value = state.viewradius * 2 - state.distance(h, loc);
+                        if (value > 0)
+                        {
+                            state.grid[row][col].value += value;
+                        }
+                    }
+                }
+                else // less than 50 ants
+                {
+                    state.grid[row][col].value += 5;
+                }
+            }
+        }
+    }
 }
