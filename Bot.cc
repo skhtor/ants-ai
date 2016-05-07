@@ -132,14 +132,14 @@ void Bot::makeMoves()
                 // }
                 // else ant->m_retreat = false;
                 //
-                // if (state.grid[loc.row][loc.col].ant != 0)
-                // {
-                state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
-                state.makeMove(ant->m_loc, dir);
-                ant->MoveTo(loc, dir);
-                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
-                state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
-                // }
+                if (state.grid[loc.row][loc.col].ant != 0)
+                {
+                    state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
+                    state.makeMove(ant->m_loc, dir);
+                    ant->MoveTo(loc, dir);
+                    state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
+                    state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
+                }
                 break;
             }
 
@@ -570,7 +570,7 @@ void Bot::AStar(Ant* ant, Location dest)
     // Add initial node to queue
     Node node = Node(ant->m_loc);
     node.g = 0;
-    node.h = EstimateCost(node.m_loc, dest);
+    node.h = state.manDistance(node.m_loc, dest);
     node.f = node.g + node.h;
 
     // Add node to queue
@@ -645,16 +645,6 @@ void Bot::AStar(Ant* ant, Location dest)
             } // End loop of each diction 0, 1, 2, 3
         }
     } // End while queue size has an element
-}
-
-int Bot::EstimateCost(Location from, Location to)
-{
-    int cost = 0;
-
-    cost += abs(from.row - to.row);
-    cost += abs(from.col - to.col);
-
-    return cost;
 }
 
 int Bot::IndNodeSmallestF(std::deque<Node> queue)

@@ -48,7 +48,6 @@ struct Bot
 
     // A*
     void AStar(Ant* ant, Location dest);
-    int EstimateCost(Location from, Location to);
     int IndNodeSmallestF(std::deque<Node> queue);
 };
 
