@@ -30,6 +30,8 @@ void Bot::playGame()
         SpawnNewAnts();
         DeleteDeadAnts();
         PlaceAntsInSquares();
+        NearbyAllies();
+        NearbyEnemies();
         ResetAnts();
         makeMoves();
         endTurn();
@@ -46,28 +48,13 @@ void Bot::makeMoves()
 
     //SearchRadius(state.enemyHills, ATTACKHILL);
     SearchRadius(state.food, PICKUPFOOD);
-    NearbyAllies();
-    NearbyEnemies();
     //EnemyHills();
 
-    if (myAnts.size() > 50)
-    {
-        for (Ant* ant: myAnts)
-        {
-            if (ant->m_mission == EXPLORE)
-            {
-                for (Location hill: state.enemyHills)
-                {
-                    if (state.distance(hill, ant->m_loc) <= state.viewradius*2)
-                    {
-                        AStar(ant, hill);
+    if (myAnts.size() > 35)
+        AttackHills();
 
-                        break;
-                    }
-                } // end loop through eat enemy hill visible
-            } // endif ant not currently assigned a mission
-        } // end loop through each ant
-    }
+    if (myAnts.size() > 25)
+        AttackAnts();
 
     // Defence
     for (Location base: state.myHills)
@@ -77,7 +64,6 @@ void Bot::makeMoves()
             if (state.distance(e, base) <= state.viewradius &&
                 BaseInDanger(base, state.viewradius))
             {
-                state.bug << "Guarding base" << endl;
                 GuardBase(base);
                 break;
             }
@@ -90,16 +76,15 @@ void Bot::makeMoves()
 
         // if (ant->m_nearbyEnemies > ant->m_nearbyAllies)
         //     dangeredAnts.push_back(ant);
-
+        //
         // if (dangeredAnts.size() > 0)
         // {
-        //     int randomIndex = rand() % dangeredAnts.size();
-
-        // if (enemyHills.size() > 0)
-        // {
-        //     AStar(ant, enemyHills[0]);
-        // }
-
+        //     for (Ant* antInDanger: dangeredAnts)
+        //     {
+        //         if (state.distance(ant->m_loc, antInDanger->m_loc) <= state.viewradius
+        //     }
+        //
+        //     AStar(ant, dangeredAnts[0]);
         // }
 
         // Testing purposes
@@ -129,7 +114,7 @@ void Bot::makeMoves()
                 break;
             }
 
-            case ATTACKHILL:
+            case ATTACK:
             {
                 int dir = ant->m_nextMove;
                 Location loc = state.getLocation(ant->m_loc, dir);
@@ -354,6 +339,42 @@ bool Bot::BaseInDanger(Location h, double maxDist)
     return false;
 }
 
+void Bot::AttackHills()
+{
+    for (Ant* ant: myAnts)
+    {
+        if (ant->m_mission == EXPLORE)
+        {
+            for (Location hill: state.enemyHills)
+            {
+                if (state.distance(hill, ant->m_loc) <= state.viewradius*2)
+                {
+                    AStar(ant, hill, ATTACK);
+                    break;
+                }
+            } // end loop through each enemy hill visible
+        } // endif ant not currently assigned a mission
+    } // end loop through each ant
+}
+
+void Bot::AttackAnts()
+{
+    for (Ant* ant: myAnts)
+    {
+        if (ant->m_mission == EXPLORE && ant->m_nearbyAllies > 3)
+        {
+            for (Location enemy: state.enemyAntLocs)
+            {
+                if (state.distance(enemy, ant->m_loc) <= state.viewradius)
+                {
+                    AStar(ant, enemy, ATTACK);
+                    break;
+                }
+            } // end loop through each enemy hill visible
+        }
+    } // end for loop of each ant
+}
+
 void Bot::GuardBase(Location h)
 {
     int count = 0;
@@ -362,7 +383,14 @@ void Bot::GuardBase(Location h)
         Location(h.row - 1, h.col - 1), // North West
         Location(h.row - 1, h.col + 1), // South West
         Location(h.row + 1, h.col - 1), // North East
-        Location(h.row + 1, h.col + 1), // South East
+        Location(h.row + 1, h.col + 1) // South East
+    };
+
+    std::vector<Location> edges = {
+        Location(h.row, h.col - 1), // North
+        Location(h.row, h.col + 1), // South
+        Location(h.row - 1, h.col), // West
+        Location(h.row + 1, h.col), // East
     };
 
     for (Location corner: corners)
@@ -383,25 +411,17 @@ void Bot::GuardBase(Location h)
     // Corners are filled
     if (count == 4)
     {
-        std::vector<Location> edges = {
-            Location(h.row, h.col - 1), // North
-            Location(h.row, h.col + 1), // South
-            Location(h.row - 1, h.col), // West
-            Location(h.row + 1, h.col), // East
-        };
-
         for (Location edge: edges)
         {
             if (state.grid[edge.row][edge.col].ant == 0)
             {
                 if (state.grid[edge.row][edge.col].myAnt != NULL)
                 {
-                    state.grid[edge.row][edge.col].myAnt->m_mission = DEFEND; // North
-                    state.grid[edge.row][edge.col].value *= 0;
+                    state.grid[edge.row][edge.col].myAnt->m_mission = DEFEND;
+                    state.grid[edge.row][edge.col].value = 0;
                 }
             }
-            else
-                state.grid[edge.row][edge.col].value = 500;
+            else state.grid[edge.row][edge.col].value = 500;
         }
     }
 }
@@ -445,7 +465,7 @@ void Bot::UltimateGuardBase(Location h)
 
 void Bot::CheckPath(Ant* ant, int* dir, Location* loc)
 {
-    if (ant->m_alliesInLine < 2)
+    if (ant->m_alliesInLine < ant->m_nearbyEnemies + 1)
     {
         bool safePath = true;
 
@@ -502,9 +522,11 @@ void Bot::MoveToHighVal(Ant* ant)
     // If ant isn't blocked by water or other ants
     if (highestVal > 0)
     {
+        state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
         state.makeMove(ant->m_loc, bestDir);
         ant->MoveTo(newLoc, bestDir);
         state.grid[newLoc.row][newLoc.col].value *= 0.5;
+        state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
     }
     else state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
 }
@@ -535,7 +557,7 @@ void Bot::NearbyAllies()
             {
 				(*a)->m_nearbyAllies++;
 				(*b)->m_nearbyAllies++;
-                if (d <= state.attackradius)
+                if (d <= state.attackradius * 0.7)
                 {
                     (*a)->m_alliesInLine++;
                     (*b)->m_alliesInLine++;
@@ -596,7 +618,7 @@ void Bot::EnemyHills()
     }
 }
 
-void Bot::AStar(Ant* ant, Location dest)
+void Bot::AStar(Ant* ant, Location dest, Mission mission)
 {
     // Create 2D vector which stores visited locations
     std::vector<std::vector<bool> > visited(state.rows, std::vector<bool>(state.cols, false));
@@ -616,9 +638,7 @@ void Bot::AStar(Ant* ant, Location dest)
 
     int maxDist = 3 * state.distance(ant->m_loc, dest);
 
-    //float searchStart = state.timer.getTime();
-
-    while (queue.size() > 0)// && state.timer.getTime() - searchStart < 1)
+    while (queue.size() > 0)
     {
         int closestNode = IndNodeSmallestF(queue);
 
@@ -628,11 +648,10 @@ void Bot::AStar(Ant* ant, Location dest)
         queue.erase(queue.begin() + closestNode);
 
         // If target cell, break
-        if (currentNode.m_loc == dest) // FIXME check if comparison works
+        if (currentNode.m_loc == dest)
         {
-            state.bug << "Destination found!" << endl;
             ant->m_nextMove = currentNode.m_lastMove;
-            ant->m_mission = ATTACKHILL;
+            ant->m_mission = mission;
             break;
         }
         else
@@ -652,7 +671,6 @@ void Bot::AStar(Ant* ant, Location dest)
                     nNode.h = state.manDistance(nNode.m_loc, dest);
                     nNode.f = nNode.g + nNode.h;
 
-                    //state.bug << "last move: " << currentNode.m_lastMove << endl;
                     // Pass through the first move made to get to that node
                     if (currentNode.m_lastMove == -1)
                         nNode.AddFirstMove(d);
@@ -666,14 +684,12 @@ void Bot::AStar(Ant* ant, Location dest)
                         {
     						if (queue[i].f > nNode.f)
                             {
-                                state.bug << "Inserted at: " << i << endl;
     							queue.insert(queue.begin() + i, nNode);
     							break;
     						}
     					}
                         if (i == size)
                         {
-                            state.bug << "Inserted at end" << endl;
                             queue.push_back(nNode);
                         }
                         visited[nNode.m_loc.row][nNode.m_loc.col] = true;

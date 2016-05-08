@@ -5,7 +5,7 @@ enum Mission
 {
     EXPLORE,
     PICKUPFOOD,
-    ATTACKHILL,
+    ATTACK,
     DEFEND,
     DEFAULT
 };

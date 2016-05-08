@@ -36,8 +36,8 @@ struct Bot
 
     // Defence
     void GuardBase(Location h);
-    bool BaseInDanger(Location h, double maxDist);
     void UltimateGuardBase(Location h);
+    bool BaseInDanger(Location h, double maxDist);
 
     // Explore
     void MoveToHighVal(Ant* ant);
@@ -47,8 +47,12 @@ struct Bot
     void SearchRadius(std::vector<Location> locations, Mission mission);
 
     // A*
-    void AStar(Ant* ant, Location dest);
+    void AStar(Ant* ant, Location dest, Mission mission);
     int IndNodeSmallestF(std::deque<Node> queue);
+
+    // Offence
+    void AttackHills();
+    void AttackAnts();
 
     // Other
     void CheckPath(Ant* ant, int* dir, Location* loc);
