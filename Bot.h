@@ -49,6 +49,9 @@ struct Bot
     // A*
     void AStar(Ant* ant, Location dest);
     int IndNodeSmallestF(std::deque<Node> queue);
+
+    // Other
+    void CheckPath(Ant* ant, int* dir, Location* loc);
 };
 
 #endif //BOT_H_

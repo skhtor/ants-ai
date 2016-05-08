@@ -1,6 +1,9 @@
 #ifndef LOCATION_H_
 #define LOCATION_H_
 
+using namespace std;
+#include <ostream>
+
 /*
     struct for representing locations in the grid.
 */
@@ -31,7 +34,7 @@ struct Location
 
     friend ostream& operator<<(ostream& os, const Location& loc)
     {
-        os << "(" << loc.row << ", " << loc.col << ")" << dt.yr;
+        os << "(" << loc.row << ", " << loc.col << ")";
         return os;
     }
 };
