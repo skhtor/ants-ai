@@ -16,6 +16,8 @@ struct Bot
     std::vector<std::vector<bool> > enemyHillsGrid;
     std::vector<Location> enemyHills;
 
+    std::vector<Ant*> conscriptedAnts;
+
     // Constructor
     Bot();
 
@@ -35,12 +37,14 @@ struct Bot
     void EnemyHills();
 
     // Defence
+    void Defence();
     void GuardBase(Location h);
     void UltimateGuardBase(Location h);
     bool BaseInDanger(Location h, double maxDist);
 
     // Explore
     void MoveToHighVal(Ant* ant);
+    void MoveToLowVal(Ant* ant);
     void UpdateGridValues();
 
     // BFS

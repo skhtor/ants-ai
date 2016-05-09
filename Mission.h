@@ -6,7 +6,10 @@ enum Mission
     EXPLORE,
     PICKUPFOOD,
     ATTACK,
+    STORMHILL,
     DEFEND,
+    STOPENEMY,
+    CONSCRIPTION,
     DEFAULT
 };
 

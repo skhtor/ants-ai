@@ -15,6 +15,8 @@ struct Ant
     bool m_retreat;
     Mission m_mission;
 
+    int m_timeSpentDefending;
+
     // BFS pathfinding
     int m_nextMove;
     int m_dir;

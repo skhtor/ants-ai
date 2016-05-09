@@ -27,6 +27,11 @@ struct Location
         return (cP1.col == cP2.col && cP1.row == cP2.row);
     };
 
+    friend bool operator== (Location &cP1, const Location &cP2)
+    {
+        return (cP1.col == cP2.col && cP1.row == cP2.row);
+    };
+
     friend bool operator!= (Location &cP1, Location &cP2)
     {
         return !(cP1 == cP2);

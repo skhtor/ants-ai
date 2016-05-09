@@ -28,12 +28,19 @@ void Bot::playGame()
         UpdateGridValues();
         //state.updateDangerZones();
         SpawnNewAnts();
+        state.bug << "Spawned new ants" << endl;
         DeleteDeadAnts();
+        state.bug << "Killed dead ants" << endl;
         PlaceAntsInSquares();
+        state.bug << "Placed ants in squares" << endl;
         NearbyAllies();
+        state.bug << "Calced nearby allies" << endl;
         NearbyEnemies();
+        state.bug << "Calced nearby enemies" << endl;
         ResetAnts();
+        state.bug << "Resetted ants" << endl;
         makeMoves();
+        state.bug << "Made moves" << endl;
         endTurn();
     }
 };
@@ -50,25 +57,21 @@ void Bot::makeMoves()
     SearchRadius(state.food, PICKUPFOOD);
     //EnemyHills();
 
+    state.bug << "Searched for food done" << endl;
+
     if (myAnts.size() > 35)
         AttackHills();
 
     if (myAnts.size() > 25)
+    {
         AttackAnts();
+        state.bug << "Attacked ants" << endl;
+    }
 
     // Defence
-    for (Location base: state.myHills)
-    {
-        for (Location e: state.enemyAntLocs)
-        {
-            if (state.distance(e, base) <= state.viewradius &&
-                BaseInDanger(base, state.viewradius))
-            {
-                GuardBase(base);
-                break;
-            }
-        } // end loop through visible enemies
-    } // end loop through bases
+    Defence();
+
+    state.bug << "Guarded bases" << endl;
 
     // Make moves on each ant
     for (Ant* ant: myAnts)
@@ -135,6 +138,13 @@ void Bot::makeMoves()
             case DEFEND:
             {
                 state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
+                break;
+            }
+
+            case CONSCRIPTION:
+            {
+                ant->m_timeSpentDefending++;
+                MoveToLowVal(ant);
                 break;
             }
 
@@ -221,8 +231,57 @@ void Bot::ResetAnts()
     {
         a->m_nextMove = -1;
         a->m_moved = false;
-        a->m_mission = EXPLORE;
+        if (a->m_mission != STORMHILL)
+        {
+            a->m_mission = EXPLORE;
+        }
     }
+}
+
+void Bot::Defence()
+{
+    for (Location base: state.myHills)
+    {
+        // Make fort
+        for (Location e: state.enemyAntLocs)
+        {
+            if (state.distance(e, base) <= state.viewradius &&
+                BaseInDanger(base, state.viewradius))
+            {
+                GuardBase(base);
+                break;
+            }
+        } // end loop through visible enemies
+
+        // Conscription (ants have to do their time defending their base)
+        if (myAnts.size() > 10)
+        {
+            conscriptedAnts.clear();
+            int count = 0;
+            for (Ant* ant: myAnts)
+            {
+                if (state.distance(ant->m_loc, base) <= state.viewradius)
+                {
+                    count++;
+                    conscriptedAnts.push_back(ant);
+                }
+            }
+
+            if (count < 4)
+            {
+                for (Ant* ant: conscriptedAnts)
+                {
+                    if (ant->m_mission == EXPLORE && state.manDistance(ant->m_loc, base) == 2)
+                    {
+                        if (ant->m_timeSpentDefending > 10)
+                            ant->m_timeSpentDefending = 0;
+                        else
+                            ant->m_mission = CONSCRIPTION;
+                    }
+                }
+            }
+        }
+    } // end loop through bases
 }
 
 void Bot::SearchRadius(std::vector<Location> locations, Mission mission)
@@ -529,6 +588,42 @@ void Bot::MoveToHighVal(Ant* ant)
         state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
     }
     else state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
+}
+
+// Move to the lowest valued square in the surroundings
+void Bot::MoveToLowVal(Ant* ant)
+{
+    double lowestVal = 0; // highest value of neighbours
+    int bestDir = 0; // Index of neighbour with highest value
+
+    for (int d = ant->m_dir; d < ant->m_dir + 4; d++)
+    {
+        int dir = d % 4;
+        Location tempLoc = state.getLocation(ant->m_loc, dir);
+
+        if (state.grid[tempLoc.row][tempLoc.col].ant == 0)
+            continue;
+
+        if (state.grid[tempLoc.row][tempLoc.col].value < lowestVal)
+        {
+            lowestVal = state.grid[tempLoc.row][tempLoc.col].value;
+            bestDir = dir;
+        }
+    }
+
+    Location newLoc = state.getLocation(ant->m_loc, bestDir);
+    CheckPath(ant, &bestDir, &newLoc);
+
+    // If ant isn't blocked by water or other ants
+    if (lowestVal > 0)
+    {
+        state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
+        state.makeMove(ant->m_loc, bestDir);
+        ant->MoveTo(newLoc, bestDir);
+        state.grid[newLoc.row][newLoc.col].value *= 1.5;
+        state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
+    }
+    else state.grid[ant->m_loc.row][ant->m_loc.col].value *= 1.5;
 }
 
 // Calculating nearby ants
