@@ -57,7 +57,7 @@ struct Bot
     int FindPathDist(Location origin, Location dest);
 
     // Offence
-    void AttackHills();
+    void AttackHills(double maxRadius, Mission mission);
     void AttackAnts();
 
     // Other

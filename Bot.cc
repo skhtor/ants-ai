@@ -60,7 +60,14 @@ void Bot::makeMoves()
     state.bug << "Searched for food done" << endl;
 
     if (myAnts.size() > 35)
-        AttackHills();
+    {
+        if (myAnts.size() > state.myHills.size()*50)
+            AttackHills(state.viewradius*20, STORMHILL);
+        else
+            AttackHills(state.viewradius*2, ATTACK);
+
+        state.bug << "Attacked hills" << endl;
+    }
 
     if (myAnts.size() > 25)
     {
@@ -76,19 +83,13 @@ void Bot::makeMoves()
     // Make moves on each ant
     for (Ant* ant: myAnts)
     { // For each ant
-
-        // if (ant->m_nearbyEnemies > ant->m_nearbyAllies)
-        //     dangeredAnts.push_back(ant);
-        //
-        // if (dangeredAnts.size() > 0)
-        // {
-        //     for (Ant* antInDanger: dangeredAnts)
-        //     {
-        //         if (state.distance(ant->m_loc, antInDanger->m_loc) <= state.viewradius
-        //     }
-        //
-        //     AStar(ant, dangeredAnts[0]);
-        // }
+        int row = ant->m_loc.row;
+        int col = ant->m_loc.col;
+        std::vector<Location>::iterator position = std::find(enemyHills.begin(), enemyHills.end(), Location(row, col));
+        if (position != enemyHills.end()) // == myVector.end() means the element was not found
+        {
+            enemyHills.erase(position);
+        }
 
         // Testing purposes
         //ant->m_mission = EXPLORE;
@@ -102,6 +103,22 @@ void Bot::makeMoves()
             }
 
             case PICKUPFOOD:
+            {
+                int dir = ant->m_nextMove;
+                Location loc = state.getLocation(ant->m_loc, dir);
+
+                if (state.grid[loc.row][loc.col].ant != 0)
+                {
+                    state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
+                    state.makeMove(ant->m_loc, dir);
+                    ant->MoveTo(loc, dir);
+                    state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
+                    state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
+                }
+                break;
+            }
+
+            case STORMHILL:
             {
                 int dir = ant->m_nextMove;
                 Location loc = state.getLocation(ant->m_loc, dir);
@@ -398,20 +415,30 @@ bool Bot::BaseInDanger(Location h, double maxDist)
     return false;
 }
 
-void Bot::AttackHills()
+void Bot::AttackHills(double maxRadius, Mission mission)
 {
-    for (Ant* ant: myAnts)
+    for (Location hill: state.enemyHills)
     {
-        if (ant->m_mission == EXPLORE)
+        if(find(enemyHills.begin(), enemyHills.end(), hill) == enemyHills.end()) {
+            enemyHills.push_back(hill);
+        }
+    } // end loop through each enemy hill visible
+
+    int count = 0;
+
+    for (Location hill: enemyHills)
+    {
+        for (Ant* ant: myAnts)
         {
-            for (Location hill: state.enemyHills)
+            if (ant->m_mission == EXPLORE || ant->m_mission == STORMHILL)
             {
-                if (state.distance(hill, ant->m_loc) <= state.viewradius*2)
+                if (state.distance(hill, ant->m_loc) <= maxRadius)
                 {
-                    AStar(ant, hill, ATTACK);
-                    break;
+                    AStar(ant, hill, mission);
+                    count++;
                 }
-            } // end loop through each enemy hill visible
+            }
+            if (count >= state.myHills.size()*20) break;
         } // endif ant not currently assigned a mission
     } // end loop through each ant
 }
@@ -420,7 +447,7 @@ void Bot::AttackAnts()
 {
     for (Ant* ant: myAnts)
     {
-        if (ant->m_mission == EXPLORE && ant->m_nearbyAllies > 3)
+        if (ant->m_mission == EXPLORE && ant->m_mission != STORMHILL && ant->m_nearbyAllies > 3)
         {
             for (Location enemy: state.enemyAntLocs)
             {
@@ -735,12 +762,12 @@ void Bot::AStar(Ant* ant, Location dest, Mission mission)
 
     while (queue.size() > 0)
     {
-        int closestNode = IndNodeSmallestF(queue);
+        //int closestNode = IndNodeSmallestF(queue);
 
         // Dequeue node
-        Node currentNode = queue[closestNode];
+        Node currentNode = queue.front();//[closestNode];
 
-        queue.erase(queue.begin() + closestNode);
+        queue.pop_front();//erase(queue.begin() + closestNode);
 
         // If target cell, break
         if (currentNode.m_loc == dest)
@@ -793,6 +820,8 @@ void Bot::AStar(Ant* ant, Location dest, Mission mission)
             } // End loop of each diction 0, 1, 2, 3
         }
     } // End while queue size has an element
+
+    ant->m_mission = EXPLORE;
 }
 
 int Bot::IndNodeSmallestF(std::deque<Node> queue)
