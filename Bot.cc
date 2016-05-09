@@ -144,7 +144,8 @@ void Bot::makeMoves()
             case CONSCRIPTION:
             {
                 ant->m_timeSpentDefending++;
-                MoveToLowVal(ant);
+                // MoveToLowVal(ant);
+                state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
                 break;
             }
 
