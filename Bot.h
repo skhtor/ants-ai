@@ -46,6 +46,7 @@ struct Bot
     void MoveToHighVal(Ant* ant);
     void MoveToLowVal(Ant* ant);
     void UpdateGridValues();
+    void ReduceValue(int row, int col);
 
     // BFS
     void SearchRadius(std::vector<Location> locations, Mission mission);

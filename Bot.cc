@@ -440,17 +440,33 @@ void Bot::GuardBase(Location h)
     int count = 0;
 
     std::vector<Location> corners = {
-        Location(h.row - 1, h.col - 1), // North West
-        Location(h.row - 1, h.col + 1), // South West
-        Location(h.row + 1, h.col - 1), // North East
-        Location(h.row + 1, h.col + 1) // South East
+        Location(
+            min(h.row, state.rows - 1),
+            min(h.col, state.cols - 1)), // North West
+        Location(
+            min(h.row, state.rows - 1),
+            min(h.col, state.cols + 1)), // South West
+        Location(
+            min(h.row, state.rows + 1),
+            min(h.col, state.cols - 1)), // North East
+        Location(
+            min(h.row, state.rows + 1),
+            min(h.col, state.rows + 1)) // South East
     };
 
     std::vector<Location> edges = {
-        Location(h.row, h.col - 1), // North
-        Location(h.row, h.col + 1), // South
-        Location(h.row - 1, h.col), // West
-        Location(h.row + 1, h.col), // East
+        Location(
+            h.row,
+            min(h.col, state.cols - 1)), // North
+        Location(
+            h.row,
+            min(h.col, state.cols + 1)), // South
+        Location(
+            min(h.row, state.rows - 1),
+            h.col), // West
+        Location(
+            min(h.row, state.rows + 1),
+            h.col), // East
     };
 
     for (Location corner: corners)
@@ -585,7 +601,7 @@ void Bot::MoveToHighVal(Ant* ant)
         state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = NULL;
         state.makeMove(ant->m_loc, bestDir);
         ant->MoveTo(newLoc, bestDir);
-        state.grid[newLoc.row][newLoc.col].value *= 0.5;
+        ReduceValue(newLoc.row, newLoc.col);
         state.grid[ant->m_loc.row][ant->m_loc.col].myAnt = ant;
     }
     else state.grid[ant->m_loc.row][ant->m_loc.col].value *= 0.5;
@@ -932,4 +948,55 @@ int Bot::FindPathDist(Location origin, Location dest)
 
     // path not found
     return -1;
+}
+
+void Bot::ReduceValue(int row, int col)
+{
+    state.grid[row][col].value *= 0.5;
+
+    std::vector<Location> corners = {
+        Location(
+            min(row, state.rows - 1),
+            min(col, state.cols - 1)), // North West
+        Location(
+            min(row, state.rows - 1),
+            min(col, state.cols + 1)), // South West
+        Location(
+            min(row, state.rows + 1),
+            min(col, state.cols - 1)), // North East
+        Location(
+            min(row, state.rows + 1),
+            min(col, state.rows + 1)) // South East
+    };
+
+    for (Location loc: corners)
+    {
+        if (!state.grid[loc.row][loc.col].isWater && state.grid[loc.row][loc.col].ant != 0)
+            state.grid[loc.row][loc.col].value *= 0.8;
+    }
+
+    state.bug << "lowered corner values" << endl;
+
+    std::vector<Location> edges = {
+        Location(
+            row,
+            min(col, state.cols - 1)), // North
+        Location(
+            row,
+            min(col, state.cols + 1)), // South
+        Location(
+            min(row, state.rows - 1),
+            col), // West
+        Location(
+            min(row, state.rows + 1),
+            col), // East
+    };
+
+    for (Location loc: edges)
+    {
+        if (!state.grid[loc.row][loc.col].isWater && state.grid[loc.row][loc.col].ant != 0)
+            state.grid[loc.row][loc.col].value *= 0.65;
+    }
+
+    state.bug << "lowered edge values" << endl;
 }
