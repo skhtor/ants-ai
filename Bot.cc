@@ -731,36 +731,109 @@ void Bot::UpdateGridValues()
                 state.grid[row][col].value += 0;
             else if (state.grid[row][col].value != -1) // Add euclidean distance from hills to squares each turn
             {
-                if (myAnts.size() > 50)
+                if (state.grid[row][col].isVisible && state.grid[row][col].pathDist == -1)
                 {
-                    double closestHillDistance = 99999;
-                    Location closestHill;
-                    Location loc = Location(row, col);
-
-                    for (Location h: state.myHills)
+                    int closestDist = 99999;
+                    for (Location base: state.myHills)
                     {
-                        if (state.distance(loc, h) <= closestHillDistance)
-                        {
-                            closestHillDistance = state.distance(loc, h);
-                            closestHill = h;
-                        }
+                        int dist = FindPathDist(base, Location(row, col));
+                        if (dist != -1 && dist < closestDist)
+                            closestDist = dist;
                     }
-                    state.grid[row][col].value += state.manDistance(loc, closestHill);
 
-                    for (Location h: state.enemyHills)
-                    {
-                        double value = state.viewradius * 2 - state.distance(h, loc);
-                        if (value > 0)
-                        {
-                            state.grid[row][col].value += value;
-                        }
-                    }
+                    state.grid[row][col].pathDist = closestDist;
                 }
-                else // less than 50 ants
+                if (myAnts.size() > 20)
+                {
+                    if (state.grid[row][col].pathDist != -1)
+                        state.grid[row][col].value += state.grid[row][col].pathDist;
+                    else
+                        state.grid[row][col].value += state.grid[row][col].manDist;
+                }
+                else // less than 20 ants
                 {
                     state.grid[row][col].value += 5;
                 }
             }
         }
     }
+}
+
+int Bot::FindPathDist(Location origin, Location dest)
+{
+    // Create 2D vector which stores visited locations
+    std::vector<std::vector<bool> > visited(state.rows, std::vector<bool>(state.cols, false));
+
+    // Initialise queue
+    std::deque<Node> queue;
+
+    // Add initial node to queue
+    Node node = Node(origin);
+    node.g = 0;
+    node.h = state.manDistance(node.m_loc, dest);
+    node.f = node.g + node.h;
+
+    // Add node to queue
+    queue.push_back(node);
+    visited[node.m_loc.row][node.m_loc.col] = true;
+
+    while (queue.size() > 0)
+    {
+        //int closestNode = IndNodeSmallestF(queue);
+
+        // Dequeue node
+        Node currentNode = queue.front();//[closestNode];
+
+        queue.pop_front();//erase(queue.begin() + closestNode);
+
+        // If target cell, break
+        if (currentNode.m_loc == dest)
+        {
+            return currentNode.g;
+        }
+        else
+        {
+            // Check available surrounding nodes from current node
+            for (int d = 0; d < 4; d++)
+            {
+                Location nLoc = state.getLocation(currentNode.m_loc, d);
+
+                if (!visited[nLoc.row][nLoc.col] && // Not already visited
+                    state.grid[nLoc.row][nLoc.col].isVisible && // Node is visible
+                    !state.grid[nLoc.row][nLoc.col].isWater) // Node does not contain water
+                {
+                    Node nNode = Node(nLoc); // Create new node
+
+                    nNode.g = currentNode.g + 1;
+                    nNode.h = state.manDistance(nNode.m_loc, dest);
+                    nNode.f = nNode.g + nNode.h;
+
+                    // Pass through the first move made to get to that node
+                    if (currentNode.m_lastMove == -1)
+                        nNode.AddFirstMove(d);
+                    else
+                        nNode.AddFirstMove(currentNode.m_lastMove);
+
+                    int i;
+                    int size = queue.size();
+                    for (i = 0; i < size; i++)
+                    {
+						if (queue[i].f > nNode.f)
+                        {
+							queue.insert(queue.begin() + i, nNode);
+							break;
+						}
+					}
+                    if (i == size)
+                    {
+                        queue.push_back(nNode);
+                    }
+                    visited[nNode.m_loc.row][nNode.m_loc.col] = true;
+                }
+            } // End loop of each diction 0, 1, 2, 3
+        }
+    } // End while queue size has an element
+
+    // path not found
+    return -1;
 }

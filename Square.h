@@ -13,13 +13,17 @@ struct Square
     int ant, hillPlayer;
     std::vector<int> deadAnts;
 
+    // Heatmap
     double value;
+    int pathDist;
+    int manDist;
+
     Ant* myAnt;
 
     Square()
     {
         isVisible = isWater = isHill = isFood = 0;
-        ant = hillPlayer = -1;
+        ant = hillPlayer = pathDist = -1;
     };
 
     //resets the information for the square except water information

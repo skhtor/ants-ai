@@ -20,6 +20,25 @@ State::~State()
 void State::setup()
 {
     grid = vector<vector<Square> >(rows, vector<Square>(cols, Square()));
+    for(int row=0; row<rows; row++)
+    {
+        for(int col=0; col<cols; col++)
+        {
+            double closestHillDistance = 99999;
+            Location closestHill;
+            Location loc = Location(row, col);
+
+            for (Location h: myHills)
+            {
+                if (distance(loc, h) < closestHillDistance)
+                {
+                    closestHillDistance = distance(loc, h);
+                    closestHill = h;
+                }
+            }
+            grid[row][col].manDist = manDistance(loc, closestHill);
+        }
+    }
 };
 
 //resets all non-water squares to land and clears the bots ant vector
