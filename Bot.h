@@ -55,7 +55,7 @@ struct Bot
     void AStar(Ant* ant, Location dest, Mission mission);
     int IndNodeSmallestF(std::deque<Node> queue);
 
-    int FindPathDist(Location origin, Location dest);
+    double FindPathDist(Location origin, Location dest);
 
     // Offence
     void AttackHills();

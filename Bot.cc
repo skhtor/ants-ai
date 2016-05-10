@@ -49,7 +49,33 @@ void Bot::playGame()
 void Bot::makeMoves()
 {
     state.bug << "turn " << state.turn << ":" << endl;
-    state.bug << state << endl;
+
+    for(int row = 0; row < state.rows; row++)
+    {
+        for(int col = 0; col < state.cols; col++)
+        {
+            if (state.grid[row][col].value < 0)
+                state.bug << " ";
+            else if (state.grid[row][col].value <= 50)
+                state.bug << "∙";
+            else if (state.grid[row][col].value <= 100)
+                state.bug << "○";
+            else if (state.grid[row][col].value <= 250)
+                state.bug << "●";
+            else if (state.grid[row][col].value <= 500)
+                state.bug << "◎";
+            else if (state.grid[row][col].value <= 1000)
+                state.bug << "⦿";
+            else if (state.grid[row][col].value <= 2500)
+                state.bug << "◉";
+            else if (state.grid[row][col].value <= 5000)
+                state.bug << "%";
+            else if (state.grid[row][col].value <= 15000)
+                state.bug << "@";
+            state.bug << " ";
+        }
+        state.bug << endl;
+    }
 
     //dangeredAnts.clear();
 
@@ -845,33 +871,36 @@ void Bot::UpdateGridValues()
             {
                 if (state.grid[row][col].isVisible && state.grid[row][col].pathDist == -1)
                 {
-                    int closestDist = 99999;
+                    bool pathFound = false;
+                    double closestDist = 99999;
+                    state.grid[row][col].pathDist = 99999;
+
                     for (Location base: state.myHills)
                     {
-                        int dist = FindPathDist(base, Location(row, col));
-                        if (dist != -1 && dist < closestDist)
+                        double dist = FindPathDist(base, Location(row, col));
+                        if (dist != -1 && dist < state.grid[row][col].pathDist)
+                        {
+                            pathFound = true;
                             closestDist = dist;
+                        }
                     }
-
-                    state.grid[row][col].pathDist = closestDist;
-                }
-                if (myAnts.size() > 20)
-                {
-                    if (state.grid[row][col].pathDist != -1)
-                        state.grid[row][col].value += state.grid[row][col].pathDist;
+                    if (pathFound)
+                        state.grid[row][col].pathDist = closestDist;
                     else
-                        state.grid[row][col].value += state.grid[row][col].manDist;
+                        state.grid[row][col].pathDist = -1;
                 }
-                else // less than 20 ants
+                if (myAnts.size() > 20 && state.grid[row][col].pathDist != -1)
                 {
-                    state.grid[row][col].value += 5;
+                    state.grid[row][col].value += (state.grid[row][col].pathDist/10);
                 }
+                else
+                    state.grid[row][col].value += 5;
             }
         }
     }
 }
 
-int Bot::FindPathDist(Location origin, Location dest)
+double Bot::FindPathDist(Location origin, Location dest)
 {
     // Create 2D vector which stores visited locations
     std::vector<std::vector<bool> > visited(state.rows, std::vector<bool>(state.cols, false));
@@ -975,8 +1004,6 @@ void Bot::ReduceValue(int row, int col)
             state.grid[loc.row][loc.col].value *= 0.8;
     }
 
-    state.bug << "lowered corner values" << endl;
-
     std::vector<Location> edges = {
         Location(
             row,
@@ -997,6 +1024,4 @@ void Bot::ReduceValue(int row, int col)
         if (!state.grid[loc.row][loc.col].isWater && state.grid[loc.row][loc.col].ant != 0)
             state.grid[loc.row][loc.col].value *= 0.65;
     }
-
-    state.bug << "lowered edge values" << endl;
 }

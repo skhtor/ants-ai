@@ -24,19 +24,20 @@ void State::setup()
     {
         for(int col=0; col<cols; col++)
         {
+            grid[row][col].value = 0;
             double closestHillDistance = 99999;
             Location closestHill;
             Location loc = Location(row, col);
 
             for (Location h: myHills)
             {
-                if (distance(loc, h) < closestHillDistance)
+                if (manDistance(loc, h) < closestHillDistance)
                 {
-                    closestHillDistance = distance(loc, h);
+                    closestHillDistance = manDistance(loc, h);
                     closestHill = h;
                 }
             }
-            grid[row][col].manDist = manDistance(loc, closestHill);
+            grid[row][col].manDist = closestHillDistance;
         }
     }
 };
