@@ -857,6 +857,7 @@ int Bot::IndNodeSmallestF(std::deque<Node> queue)
 
 void Bot::UpdateGridValues()
 {
+    int count = 0;
     for(int row = 0; row < state.rows; row++)
     {
         for(int col = 0; col < state.cols; col++)
@@ -869,7 +870,7 @@ void Bot::UpdateGridValues()
                 state.grid[row][col].value += 0;
             else if (state.grid[row][col].value != -1) // Add euclidean distance from hills to squares each turn
             {
-                if (state.grid[row][col].isVisible && state.grid[row][col].pathDist == -1)
+                if (state.grid[row][col].isVisible && state.grid[row][col].pathDist == -1 && count <= 10)
                 {
                     bool pathFound = false;
                     double closestDist = 99999;
@@ -883,6 +884,7 @@ void Bot::UpdateGridValues()
                             pathFound = true;
                             closestDist = dist;
                         }
+                        count++;
                     }
                     if (pathFound)
                         state.grid[row][col].pathDist = closestDist;
